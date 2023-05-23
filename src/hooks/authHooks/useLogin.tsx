@@ -1,5 +1,7 @@
 import { auth, firestore } from "@/Firebase/clientApp";
-import { currentUserStateAtom } from "@/atoms/CurrentUserAtom";
+import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
+
+
 import { UserInServer } from "@/types/User";
 
 import {

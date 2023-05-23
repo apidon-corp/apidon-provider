@@ -18,3 +18,14 @@ export interface CurrentUser {
   uid: string;
   isThereCurrentUser: boolean;
 }
+
+export const DefaultCurrentUser: CurrentUser = {
+  name: "",
+  description: "",
+  email: "",
+  image: "",
+  price: -1,
+  currency: "",
+  uid: "",
+  isThereCurrentUser: false,
+};

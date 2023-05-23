@@ -1,6 +1,7 @@
 import GeneralAuthenticationModals from "@/Components/Modals/Authentication/GeneralAuthenticationModals";
+import Navbar from "@/Components/Navbar/Navbar";
 import { auth } from "@/Firebase/clientApp";
-import useLogin from "@/hooks/useLogin";
+import useLogin from "@/hooks/authHooks/useLogin";
 import { Box, Center, Flex, Image } from "@chakra-ui/react";
 import { ReactNode, useEffect, useState } from "react";
 
@@ -39,6 +40,7 @@ export default function Layout({ children }: Props) {
         </Center>
       ) : (
         <Box>
+          <Navbar />
           <GeneralAuthenticationModals />
           <Flex justifyContent="center">{children}</Flex>
         </Box>

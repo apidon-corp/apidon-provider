@@ -1,5 +1,5 @@
 import { authenticationModalsStatusAtom } from "@/atoms/authenticationModalsStatusAtom";
-import useLogin from "@/hooks/useLogin";
+import useLogin from "@/hooks/authHooks/useLogin";
 import {
   Button,
   Flex,
