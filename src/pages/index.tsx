@@ -1,5 +1,8 @@
-import ClientCountArea from "@/Components/ClientStatisticsArea/ClientStatisticsArea";
-import PersonalizationArea from "@/Components/PersonalizationArea/PersonalizationArea";
+import AlgorithmArea from "@/Components/Areas/AlgorithmArea/AlgorithmArea";
+import ClientCountArea from "@/Components/Areas/ClientStatisticsArea/ClientStatisticsArea";
+import EconomyArea from "@/Components/Areas/EconomyArea/EconomyArea";
+
+import PersonalizationArea from "@/Components/Areas/PersonalizationArea/PersonalizationArea";
 import { Flex } from "@chakra-ui/react";
 
 export default function Home() {
@@ -7,6 +10,8 @@ export default function Home() {
     <Flex direction="column" width="100%">
       <PersonalizationArea />
       <ClientCountArea />
+      <EconomyArea />
+      <AlgorithmArea />
     </Flex>
   );
 }
