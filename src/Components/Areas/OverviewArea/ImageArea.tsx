@@ -58,7 +58,13 @@ export default function ImageArea() {
   };
 
   return (
-    <>
+    <Flex
+      id="image-area"
+      justify="center"
+      align="center"
+      direction="column"
+      position="relative"
+    >
       <Image
         src={candicatedImage ? candicatedImage : currentUserState.image}
         fallback={
@@ -75,7 +81,7 @@ export default function ImageArea() {
         height="20vh"
       />
       {candicatedImage ? (
-        <Flex mt="2" gap="1">
+        <Flex position="absolute" bottom="-10" gap="1">
           <Button
             variant="solid"
             colorScheme="blue"
@@ -104,7 +110,8 @@ export default function ImageArea() {
           size="sm"
           rounded="full"
           onClick={handleUploadImageButton}
-          mt="2"
+          position="absolute"
+          bottom="-10"
         >
           {currentUserState.image ? "New Image" : "Set Image"}
         </Button>
@@ -117,6 +124,6 @@ export default function ImageArea() {
         accept="image/*"
         hidden
       />
-    </>
+    </Flex>
   );
 }

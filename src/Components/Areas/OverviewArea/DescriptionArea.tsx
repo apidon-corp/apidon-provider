@@ -56,7 +56,7 @@ export default function DescriptionArea() {
 
   return (
     <Flex direction="column">
-      <Flex align="center" gap="1" mt={isDescriptionEditActive ? "10" : "0"}>
+      <Flex align="center" gap="2" mt={isDescriptionEditActive ? "10" : "0"}>
         <Text color="gray.700" fontWeight="500" fontSize="15pt">
           Description
         </Text>
