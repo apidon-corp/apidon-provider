@@ -1,16 +1,18 @@
+import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import { Flex, Text } from "@chakra-ui/react";
 import React from "react";
+import { useRecoilValue } from "recoil";
 
-type Props = {};
+export default function RevenueArea() {
+  const currentUserState = useRecoilValue(currentUserStateAtom);
 
-export default function RevenueArea({}: Props) {
   return (
     <Flex id="revenue-area" direction="column">
       <Text color="gray.700" fontWeight="500" fontSize="15pt">
         Revenue
       </Text>
       <Text color="green" fontWeight="700" fontSize="20pt">
-        $5334
+        {currentUserState.revenue ? currentUserState.revenue : "NaN"}
       </Text>
     </Flex>
   );

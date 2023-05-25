@@ -22,12 +22,14 @@ export default async function handler(
   }
 
   const createdProviderInformation: UserInServer = {
-    currency: "",
     description: "",
     email: email,
     image: "",
     name: providerName,
-    price: -1,
+    clientCount: 0,
+    revenue: 0,
+    score: 0,
+    algorithm: "",
     uid: uidCreated,
   };
 

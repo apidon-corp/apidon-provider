@@ -1,6 +1,6 @@
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import useSetDescription from "@/hooks/personalizationHooks/useSetDescription";
-import { Button, Flex, Text, Textarea } from "@chakra-ui/react";
+import { Button, Flex, Input, Text, Textarea } from "@chakra-ui/react";
 import React, { ChangeEvent, useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 
@@ -19,7 +19,7 @@ export default function DescriptionArea() {
 
   const { handleUpdateDescription } = useSetDescription();
 
-  const handleTextAreaChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextAreaChange = (event: ChangeEvent<HTMLInputElement>) => {
     setCandicateDescription(event.target.value);
   };
 
@@ -55,8 +55,8 @@ export default function DescriptionArea() {
   }, [currentUserState.description, candicateDescription]);
 
   return (
-    <Flex direction="column">
-      <Flex align="center" gap="2" mt={isDescriptionEditActive ? "10" : "0"}>
+    <Flex direction="column" maxWidth="500px">
+      <Flex align="center" gap="2">
         <Text color="gray.700" fontWeight="500" fontSize="15pt">
           Description
         </Text>
@@ -93,18 +93,19 @@ export default function DescriptionArea() {
           </Button>
         )}
       </Flex>
+
       {isDescriptionEditActive ? (
-        <Textarea
+        <Input
           value={candicateDescription}
           onChange={handleTextAreaChange}
-          resize="horizontal"
           color="black"
           fontWeight="700"
           fontSize="20pt"
           isDisabled={saveButtonLoading}
+          variant="flushed"
         />
       ) : (
-        <Text color="black" fontWeight="700" fontSize="20pt" maxWidth="500px">
+        <Text color="black" fontWeight="700" fontSize="20pt">
           {currentUserState.description
             ? currentUserState.description
             : "No description provided yet."}

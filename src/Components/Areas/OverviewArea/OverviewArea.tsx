@@ -10,10 +10,10 @@ import ScoreArea from "./ScoreArea";
 export default function OverviewArea() {
   return (
     <>
-      <Flex height="40vh" bg="gray.100" width="100%" align="center">
+      <Flex height="50vh" bg="gray.100" width="100%" align="center">
         <Flex
           id="in-element"
-          height="30vh"
+          height="50vh"
           width="100%"
           ml="5"
           align="center"

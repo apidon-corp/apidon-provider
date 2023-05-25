@@ -3,8 +3,13 @@ export interface UserInServer {
   email: string;
   description: string;
   image: string;
-  price: number;
-  currency: "USD" | "TL" | "MATIC" | "";
+
+  revenue: number;
+  score: number;
+  clientCount: number;
+
+  algorithm: string;
+
   uid: string;
 }
 
@@ -13,9 +18,15 @@ export interface CurrentUser {
   email: string;
   description: string;
   image: string;
-  price: number;
-  currency: "USD" | "TL" | "MATIC" | "";
+
+  revenue: number;
+  score: number;
+  clientCount: number;
+
   uid: string;
+
+  algorithm: string;
+
   isThereCurrentUser: boolean;
 }
 
@@ -24,8 +35,12 @@ export const DefaultCurrentUser: CurrentUser = {
   description: "",
   email: "",
   image: "",
-  price: -1,
-  currency: "",
+
+  revenue: -1,
+  score: -1,
+  clientCount: -1,
+
   uid: "",
+  algorithm: "",
   isThereCurrentUser: false,
 };
