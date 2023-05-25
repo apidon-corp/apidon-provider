@@ -20,7 +20,7 @@ export default function useUploadProfilePhoto() {
 
     let response;
     try {
-      response = await fetch("/api/imageUpload", {
+      response = await fetch("/api/user/imageUpload", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

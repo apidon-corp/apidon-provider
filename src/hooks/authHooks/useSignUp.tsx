@@ -28,7 +28,7 @@ export default function useSignUp() {
   }) => {
     let response;
     try {
-      response = await fetch("/api/signUp", {
+      response = await fetch("/api/user/signUp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

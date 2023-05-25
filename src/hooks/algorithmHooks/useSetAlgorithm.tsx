@@ -14,7 +14,7 @@ export default function useSetAlgorithm() {
     }
     let response;
     try {
-      response = await fetch("/api/setAlgorithm", {
+      response = await fetch("/api/user/setAlgorithm", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -14,7 +14,7 @@ export default function useSetDescription() {
     }
     let response;
     try {
-      response = await fetch("/api/setDescription", {
+      response = await fetch("/api/user/setDescription", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
