@@ -1,4 +1,4 @@
-import { firestore } from "@/Firebase/adminApp";
+import { fieldValue, firestore } from "@/Firebase/adminApp";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -19,29 +19,22 @@ export default async function handler(
   try {
     providerDocSnapshot = await firestore.doc(`users/${provider}`).get();
   } catch (error) {
-    console.error("Error while getting providerDocSnapshot", error);
+    console.error("Error while deal. (We were getting provider doc snapshot");
     return res.status(503).json({ error: "Firebase Error" });
   }
 
   if (!providerDocSnapshot.exists)
-    return res.status(422).json({ error: "Invalid Proivder Name" });
+    return res.status(422).json({ error: "Invalid Provider name" });
 
-  const algorithm = providerDocSnapshot.data()?.algorithm;
+  try {
+    await providerDocSnapshot.ref.update({
+      clientCount: fieldValue.increment(1),
+      revenue: (providerDocSnapshot.data()?.clientCount + 1) * 1000,
+    });
+  } catch (error) {
+    console.error("error while deal. (We were updating provider doc.");
+    return res.status(503).json({ error: "Firebase Error" });
+  }
 
-  if (!algorithm)
-    return res
-      .status(500)
-      .json({ error: `${provider} has no algorithm in it self` });
-
-  // process algorithm.......and result is
-
-  const postDocPathArray: string[] = [
-    "users/fun/posts/073549ab41394f3892a7bfa20cf1fe47",
-    "users/fun/posts/92e33e063a954f40bccb38be3a879db4",
-  ];
-
-  return res.status(200).json({
-    postDocPathArray: postDocPathArray,
-    adObjectArray: [],
-  });
+  return res.status(200).json({});
 }
