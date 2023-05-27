@@ -1,4 +1,5 @@
 import { fieldValue, firestore } from "@/Firebase/adminApp";
+import { IDealResult } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -35,6 +36,22 @@ export default async function handler(
     console.error("error while deal. (We were updating provider doc.");
     return res.status(503).json({ error: "Firebase Error" });
   }
+  try {
+    await firestore.doc(`showcase/${provider}`).update({
+      clientCount: fieldValue.increment(1),
+    });
+  } catch (error) {
+    console.error(
+      `error while deal. (We were updating showcase doc for: ${provider}`
+    );
+    return res.status(503).json({ error: "Firebase Error" });
+  }
+  const currentTimeStamp = Date.now();
+  const dealResultObject: IDealResult = {
+    name: provider,
+    startTime: currentTimeStamp,
+    endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
+  };
 
-  return res.status(200).json({});
+  return res.status(200).json({ dealResult: dealResultObject });
 }

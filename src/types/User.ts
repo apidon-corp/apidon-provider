@@ -44,3 +44,21 @@ export const DefaultCurrentUser: CurrentUser = {
   algorithm: "",
   isThereCurrentUser: false,
 };
+
+export interface IShowcaseItem {
+  name: string;
+  description: string;
+  image: string;
+
+  score: number;
+  clientCount: number;
+
+  minPrice: number;
+  maxPrice: number;
+}
+
+export interface IDealResult {
+  name: string;
+  startTime: number;
+  endTime: number;
+}

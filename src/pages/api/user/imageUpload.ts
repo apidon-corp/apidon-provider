@@ -70,6 +70,19 @@ export default async function handler(
     return res.status(503).json({ error: "Firebase error" });
   }
 
+  try {
+    await firestore.doc(`showcase/${operationFromUsername}`).update({
+      image: publicURL,
+    });
+  } catch (error) {
+    console.error(
+      "Error while setting image upload. (We were updating showcase)",
+      error
+    );
+
+    return res.status(503).json({ error: "Firebase error" });
+  }
+
   return res.status(200).json({
     newProfilePhotoURL: publicURL,
   });

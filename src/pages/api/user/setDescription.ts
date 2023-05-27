@@ -27,6 +27,16 @@ export default async function handler(
     );
     return res.status(503).json({ error: "Firebase Error" });
   }
+  try {
+    await firestore.doc(`showcase/${operationFromUsername}`).update({
+      description: description,
+    });
+  } catch (error) {
+    console.error(
+      `Error while setting description. (We were updating showcase doc of ${operationFromUsername}) `
+    );
+    return res.status(503).json({ error: "Firebase Error" });
+  }
 
   return res.status(200).json({});
 }
