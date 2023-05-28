@@ -61,4 +61,5 @@ export interface IDealResult {
   name: string;
   startTime: number;
   endTime: number;
+  earning : number
 }

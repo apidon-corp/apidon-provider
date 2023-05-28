@@ -10,6 +10,8 @@ export default function ImageArea() {
 
   const [candicatedImage, setCandicateImage] = useState("");
 
+  const [newlySettedImage, setNewlySettedImage] = useState("");
+
   const { handleUploadImage } = useUploadImage();
   const [saveImageButtonLoading, setSaveImageButtonLoading] = useState(false);
 
@@ -50,6 +52,7 @@ export default function ImageArea() {
 
     if (operationResult) {
       setCurrentUserState((prev) => ({ ...prev, image: operationResult }));
+      setNewlySettedImage(candicatedImage);
       setCandicateImage("");
       if (imageInputRef.current) imageInputRef.current.value = "";
     }
@@ -66,10 +69,16 @@ export default function ImageArea() {
       position="relative"
     >
       <Image
-        src={candicatedImage ? candicatedImage : currentUserState.image}
+        src={
+          candicatedImage
+            ? candicatedImage
+            : newlySettedImage
+            ? newlySettedImage
+            : currentUserState.image
+        }
         fallback={
           <>
-            {candicatedImage || currentUserState.image ? (
+            {candicatedImage || currentUserState.image || newlySettedImage ? (
               <SkeletonCircle width="20vh" height="20vh" />
             ) : (
               <Icon as={FaRegUserCircle} width="20vh" height="20vh" />

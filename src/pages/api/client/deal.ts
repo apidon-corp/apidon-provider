@@ -51,6 +51,7 @@ export default async function handler(
     name: provider,
     startTime: currentTimeStamp,
     endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
+    earning: 5300,
   };
 
   return res.status(200).json({ dealResult: dealResultObject });

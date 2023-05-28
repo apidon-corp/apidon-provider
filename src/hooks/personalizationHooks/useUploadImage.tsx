@@ -41,9 +41,10 @@ export default function useUploadProfilePhoto() {
       return "";
     }
 
-    const { newProfilePhotoURL } = await response.json();
+    const result = await response.json();
+    const { newImageURL } = result;
 
-    return newProfilePhotoURL as string;
+    return newImageURL as string;
   };
 
   return {
