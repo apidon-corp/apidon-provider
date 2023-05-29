@@ -33,12 +33,30 @@ export default async function handler(
       .status(500)
       .json({ error: `${provider} has no algorithm in it self` });
 
-  // process algorithm.......and result is
+  let algorithmJSON: { mode: string };
+  try {
+    algorithmJSON = JSON.parse(algorithm);
+  } catch (error) {
+    console.error("Error while parsing algorithm as JSON.", error);
+    return res
+      .status(500)
+      .json({ error: "Algorithm couldn't be parsed as JSON" });
+  }
 
-  const postDocPathArray: string[] = [
-    "users/fun/posts/073549ab41394f3892a7bfa20cf1fe47",
-    "users/fun/posts/92e33e063a954f40bccb38be3a879db4",
-  ];
+  const algorithmMode = algorithmJSON.mode;
+
+  let postDocPathArray: string[] = [];
+  if (algorithmMode === "fun") {
+    postDocPathArray = [
+      "users/birdwidefun/posts/4c8c581aa0864ec5a26d923d0bf52f8d",
+      "users/yesiam/posts/7311d620d77d4b40b0435f6a24a5cab9",
+    ];
+  } else if (algorithmMode === "serious") {
+    postDocPathArray = [
+      "users/voiceofnews/posts/586eda30e28b4352aed0dddb0af19a74",
+      "users/voiceofnews/posts/dd7bf1200230448c86724adf293915c5",
+    ];
+  }
 
   return res.status(200).json({
     postDocPathArray: postDocPathArray,
