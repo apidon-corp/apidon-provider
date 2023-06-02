@@ -48,13 +48,11 @@ export default async function handler(
   let postDocPathArray: string[] = [];
   if (algorithmMode === "fun") {
     postDocPathArray = [
-      "users/birdwidefun/posts/4c8c581aa0864ec5a26d923d0bf52f8d",
-      "users/yesiam/posts/7311d620d77d4b40b0435f6a24a5cab9",
+      "users/cringememes/posts/9762879caf1d46aaa837602a218b8c84",
     ];
   } else if (algorithmMode === "serious") {
     postDocPathArray = [
-      "users/voiceofnews/posts/586eda30e28b4352aed0dddb0af19a74",
-      "users/voiceofnews/posts/dd7bf1200230448c86724adf293915c5",
+      "users/voiceofrize/posts/3ef548095acd43749fdbd288d2afed1f",
     ];
   }
 

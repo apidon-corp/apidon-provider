@@ -54,5 +54,22 @@ export default async function handler(
     earning: 5300,
   };
 
+  let clientObject = {
+    active: true,
+    adScore: 0,
+    endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
+    entertainmentScore: 0,
+    startTime: currentTimeStamp,
+  };
+
+  try {
+    await firestore
+      .doc(`users/${provider}/clients/${username}`)
+      .set(clientObject);
+  } catch (error) {
+    console.error("Error while deal. We were adding client doc.");
+    return res.status(503).json({ error: "Firebase Error" });
+  }
+
   return res.status(200).json({ dealResult: dealResultObject });
 }
