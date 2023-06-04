@@ -56,9 +56,8 @@ export default async function handler(
 
   let clientObject = {
     active: true,
-    adScore: 0,
     endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
-    entertainmentScore: 0,
+    score: 0,
     startTime: currentTimeStamp,
   };
 

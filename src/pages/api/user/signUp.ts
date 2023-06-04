@@ -28,7 +28,10 @@ export default async function handler(
     name: providerName,
     clientCount: 0,
     revenue: 0,
-    score: 0,
+
+    sumScore: 0,
+    rateCount: 0,
+
     algorithm: "",
     uid: uidCreated,
   };
@@ -52,7 +55,9 @@ export default async function handler(
       image: "",
 
       clientCount: 0,
-      score: 0,
+
+      rateCount: 0,
+      sumScore: 0,
 
       minPrice: 0,
       maxPrice: 0,

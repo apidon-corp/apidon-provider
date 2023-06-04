@@ -5,7 +5,10 @@ export interface UserInServer {
   image: string;
 
   revenue: number;
-  score: number;
+
+  sumScore: number;
+  rateCount: number;
+
   clientCount: number;
 
   algorithm: string;
@@ -20,7 +23,12 @@ export interface CurrentUser {
   image: string;
 
   revenue: number;
+
+  rateCount: number;
+  sumScore: number;
+
   score: number;
+
   clientCount: number;
 
   uid: string;
@@ -37,7 +45,12 @@ export const DefaultCurrentUser: CurrentUser = {
   image: "",
 
   revenue: -1,
+
+  rateCount: -1,
+  sumScore: -1,
+
   score: -1,
+
   clientCount: -1,
 
   uid: "",
@@ -50,7 +63,9 @@ export interface IShowcaseItem {
   description: string;
   image: string;
 
-  score: number;
+  sumScore: number;
+  rateCount: number;
+
   clientCount: number;
 
   minPrice: number;
@@ -61,5 +76,5 @@ export interface IDealResult {
   name: string;
   startTime: number;
   endTime: number;
-  earning : number
+  earning: number;
 }

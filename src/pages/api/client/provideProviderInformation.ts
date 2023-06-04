@@ -41,7 +41,9 @@ export default async function handler(
   }
 
   const providerInformation = {
-    score: providerDocSnapshot.data()?.score,
+    score:
+      providerDocSnapshot.data()?.sumScore /
+      providerDocSnapshot.data()?.rateCount,
     clientCount: providerDocSnapshot.data()?.clientCount,
     description: providerDocSnapshot.data()?.description,
     image: providerDocSnapshot.data()?.image,

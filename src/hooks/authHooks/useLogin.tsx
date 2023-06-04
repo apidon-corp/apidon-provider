@@ -56,7 +56,7 @@ export default function useLogin() {
 
     const userDataInServer = signedInUserDocSnapshot.data() as UserInServer;
 
-    setCurrentUserState({ ...userDataInServer, isThereCurrentUser: true });
+    setCurrentUserState({ ...userDataInServer, isThereCurrentUser: true, score : userDataInServer.sumScore/userDataInServer.rateCount});
 
     return true;
   };
