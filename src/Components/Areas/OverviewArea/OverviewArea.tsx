@@ -19,7 +19,7 @@ export default function OverviewArea() {
           align="center"
           justify="center"
           direction="column"
-          gap="10"
+          gap="16"
         >
           <ImageArea />
           <Flex gap="10">

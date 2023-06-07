@@ -1,5 +1,4 @@
 import { firestore } from "@/Firebase/adminApp";
-import getDisplayName from "@/apiUtils";
 import { IShowcaseItem } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -48,6 +47,8 @@ export default async function handler(
   for (const proivderDoc of providersShowcaseCollectionSnapshot.docs) {
     providersShowcaseDatas.push(proivderDoc.data() as IShowcaseItem);
   }
+
+  console.log(providersShowcaseDatas);
 
   return res.status(200).json({
     providersShowcaseDatas: providersShowcaseDatas,

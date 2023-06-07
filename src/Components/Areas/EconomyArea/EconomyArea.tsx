@@ -18,6 +18,9 @@ export default function EconomyArea() {
         >
           <IncomeExpenseGraph />
         </Flex>
+        <Flex>
+          
+        </Flex>
       </Flex>
     </Flex>
   );

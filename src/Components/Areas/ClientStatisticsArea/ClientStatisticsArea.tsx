@@ -1,7 +1,7 @@
 import { Flex, Spinner, Text } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { ClientCountAreaGraph } from "./ClientCountAreaGraph";
-import { ClientAdEntertainmentRateGraph } from "./ClientAdEntertainmentRateGraph";
+
 import {
   DocumentData,
   QuerySnapshot,
@@ -97,9 +97,8 @@ export default function ClientCountArea() {
         <Text color="black" fontSize="20pt" fontWeight="700">
           Client Statistics
         </Text>
-        <Flex height="50vh" gap="2">
+        <Flex height="50vh" gap="2" width="100%" align="center" justify="center">
           <ClientCountAreaGraph clientCountData={clientCountGraphData} />
-          <ClientAdEntertainmentRateGraph />
         </Flex>
       </Flex>
     </Flex>

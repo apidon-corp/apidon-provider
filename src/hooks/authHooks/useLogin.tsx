@@ -1,7 +1,6 @@
 import { auth, firestore } from "@/Firebase/clientApp";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 
-
 import { UserInServer } from "@/types/User";
 
 import {
@@ -56,7 +55,15 @@ export default function useLogin() {
 
     const userDataInServer = signedInUserDocSnapshot.data() as UserInServer;
 
-    setCurrentUserState({ ...userDataInServer, isThereCurrentUser: true, score : userDataInServer.sumScore/userDataInServer.rateCount});
+    setCurrentUserState({
+      ...userDataInServer,
+      isThereCurrentUser: true,
+      score: Number(
+        ((userDataInServer.sumScore / userDataInServer.rateCount) * 20)
+          .toString()
+          .slice(0, 4)
+      ),
+    });
 
     return true;
   };
