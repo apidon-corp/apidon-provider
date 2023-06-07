@@ -30,7 +30,7 @@ export default async function handler(
   try {
     await providerDocSnapshot.ref.update({
       clientCount: fieldValue.increment(1),
-      revenue: (providerDocSnapshot.data()?.clientCount + 1) * 1000,
+      revenue: fieldValue.increment(providerDocSnapshot.data()?.offer * 1.1),
     });
   } catch (error) {
     console.error("error while deal. (We were updating provider doc.");
@@ -51,7 +51,7 @@ export default async function handler(
     name: provider,
     startTime: currentTimeStamp,
     endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
-    earning: 5300,
+    yield: providerDocSnapshot.data()?.offer,
   };
 
   let clientObject = {
@@ -59,6 +59,7 @@ export default async function handler(
     endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
     score: 0,
     startTime: currentTimeStamp,
+    debt: providerDocSnapshot.data()?.offer,
   };
 
   try {

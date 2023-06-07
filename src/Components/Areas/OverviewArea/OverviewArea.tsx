@@ -6,6 +6,7 @@ import ImageArea from "./ImageArea";
 import NameArea from "./NameArea";
 import RevenueArea from "./RevenueArea";
 import ScoreArea from "./ScoreArea";
+import OfferArea from "./OfferArea";
 
 export default function OverviewArea() {
   return (
@@ -25,6 +26,7 @@ export default function OverviewArea() {
           <Flex gap="10">
             <NameArea />
             <DescriptionArea />
+            <OfferArea />
             <RevenueArea />
             <ScoreArea />
             <ClientCountArea />

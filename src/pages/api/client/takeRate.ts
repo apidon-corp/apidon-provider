@@ -21,8 +21,6 @@ export default async function handler(
   const { authorization } = req.headers;
   const { username, provider, score } = req.body;
 
-  console.log(username, provider, score);
-
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
     return res.status(401).json({ error: "unauthorized" });
 
@@ -30,9 +28,26 @@ export default async function handler(
     return res.status(422).json({ error: "Invalid prop or props" });
   }
 
-  // update client doc
+  // get client doc...
+
+  let clientDoc: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>;
   try {
-    await firestore.doc(`users/${provider}/clients/${username}`).update({
+    clientDoc = await firestore
+      .doc(`users/${provider}/clients/${username}`)
+      .get();
+  } catch (error) {
+    console.error("Error while rating. (We were getting client doc", error);
+    return res.status(503).json({ error: "Firebase Error" });
+  }
+
+  const scoreUserGaveBefore = clientDoc.data()?.score;
+
+  const hasUserGivenScoreBefore: boolean = scoreUserGaveBefore ? true : false;
+
+  // update client doc
+
+  try {
+    await clientDoc.ref.update({
       score: score,
     });
   } catch (error) {
@@ -46,19 +61,23 @@ export default async function handler(
   // update showcase
   try {
     await firestore.doc(`showcase/${provider}`).update({
-      rateCount: fieldValue.increment(1),
-      sumScore: fieldValue.increment(score),
+      rateCount: fieldValue.increment(hasUserGivenScoreBefore ? 0 : 1),
+      sumScore: fieldValue.increment(
+        hasUserGivenScoreBefore ? score - scoreUserGaveBefore : score
+      ),
     });
   } catch (error) {
     console.error("Error while updating score . (We were updating showcase)");
     return res.status(503).json({ error: "Firebase Error" });
   }
-  // update provider doc
 
+  // update provider doc
   try {
     await firestore.doc(`users/${provider}`).update({
-      rateCount: fieldValue.increment(1),
-      sumScore: fieldValue.increment(score),
+      rateCount: fieldValue.increment(hasUserGivenScoreBefore ? 0 : 1),
+      sumScore: fieldValue.increment(
+        hasUserGivenScoreBefore ? score - scoreUserGaveBefore : score
+      ),
     });
   } catch (error) {
     console.error(

@@ -48,8 +48,6 @@ export default async function handler(
     providersShowcaseDatas.push(proivderDoc.data() as IShowcaseItem);
   }
 
-  console.log(providersShowcaseDatas);
-
   return res.status(200).json({
     providersShowcaseDatas: providersShowcaseDatas,
   });

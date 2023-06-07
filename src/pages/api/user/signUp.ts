@@ -27,7 +27,9 @@ export default async function handler(
     image: "",
     name: providerName,
     clientCount: 0,
+
     revenue: 0,
+    offer: 0,
 
     sumScore: 0,
     rateCount: 0,
@@ -59,8 +61,7 @@ export default async function handler(
       rateCount: 0,
       sumScore: 0,
 
-      minPrice: 0,
-      maxPrice: 0,
+      offer: 0,
     };
     await firestore
       .doc(`showcase/${providerName}`)

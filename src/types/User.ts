@@ -4,10 +4,11 @@ export interface UserInServer {
   description: string;
   image: string;
 
-  revenue: number;
-
   sumScore: number;
   rateCount: number;
+
+  offer: number;
+  revenue: number;
 
   clientCount: number;
 
@@ -23,9 +24,7 @@ export interface CurrentUser {
   image: string;
 
   revenue: number;
-
-  rateCount: number;
-  sumScore: number;
+  offer: number;
 
   score: number;
 
@@ -45,9 +44,7 @@ export const DefaultCurrentUser: CurrentUser = {
   image: "",
 
   revenue: -1,
-
-  rateCount: -1,
-  sumScore: -1,
+  offer: -1,
 
   score: -1,
 
@@ -67,14 +64,12 @@ export interface IShowcaseItem {
   rateCount: number;
 
   clientCount: number;
-
-  minPrice: number;
-  maxPrice: number;
+  offer: number;
 }
 
 export interface IDealResult {
   name: string;
   startTime: number;
   endTime: number;
-  earning: number;
+  yield: number;
 }
