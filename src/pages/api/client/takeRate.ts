@@ -19,12 +19,12 @@ export default async function handler(
   }
 
   const { authorization } = req.headers;
-  const { username, provider, score } = req.body;
+  const { username, provider, score, startTime } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
     return res.status(401).json({ error: "unauthorized" });
 
-  if (!username || !provider || !score) {
+  if (!username || !provider || !score || !startTime) {
     return res.status(422).json({ error: "Invalid prop or props" });
   }
 
@@ -33,7 +33,7 @@ export default async function handler(
   let clientDoc: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>;
   try {
     clientDoc = await firestore
-      .doc(`users/${provider}/clients/${username}`)
+      .doc(`users/${provider}/clients/${username}-${startTime}`)
       .get();
   } catch (error) {
     console.error("Error while rating. (We were getting client doc", error);
@@ -45,7 +45,6 @@ export default async function handler(
   const hasUserGivenScoreBefore: boolean = scoreUserGaveBefore ? true : false;
 
   // update client doc
-
   try {
     await clientDoc.ref.update({
       score: score,

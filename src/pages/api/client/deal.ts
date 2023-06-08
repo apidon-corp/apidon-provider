@@ -46,25 +46,28 @@ export default async function handler(
     );
     return res.status(503).json({ error: "Firebase Error" });
   }
-  const currentTimeStamp = Date.now();
+  const startTime = Date.now();
+  const thirtyDay = 30 * 24 * 60 * 60 * 1000;
+  const tenMinutes = 60 * 10 * 1000;
   const dealResultObject: IDealResult = {
     name: provider,
-    startTime: currentTimeStamp,
-    endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
+    startTime: startTime,
+    endTime: startTime + tenMinutes,
     yield: providerDocSnapshot.data()?.offer,
   };
 
   let clientObject = {
     active: true,
-    endTime: currentTimeStamp + 30 * 24 * 60 * 60 * 1000,
+    endTime: startTime + tenMinutes,
     score: 0,
-    startTime: currentTimeStamp,
+    startTime: startTime,
     debt: providerDocSnapshot.data()?.offer,
+    withdrawn: false,
   };
 
   try {
     await firestore
-      .doc(`users/${provider}/clients/${username}`)
+      .doc(`users/${provider}/clients/${username}-${startTime}`)
       .set(clientObject);
   } catch (error) {
     console.error("Error while deal. We were adding client doc.");
