@@ -52,13 +52,13 @@ export default async function handler(
   const dealResultObject: IDealResult = {
     name: provider,
     startTime: startTime,
-    endTime: startTime + tenMinutes,
+    endTime: startTime + thirtyDay,
     yield: providerDocSnapshot.data()?.offer,
   };
 
   let clientObject = {
     active: true,
-    endTime: startTime + tenMinutes,
+    endTime: startTime + thirtyDay,
     score: 0,
     startTime: startTime,
     debt: providerDocSnapshot.data()?.offer,
