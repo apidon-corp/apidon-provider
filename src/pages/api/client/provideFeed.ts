@@ -47,17 +47,8 @@ export default async function handler(
 
   let postDocPathArray: string[] = [];
   if (provider === "SmartFeed") {
-    postDocPathArray = [
-      "users/cringememes/posts/9762879caf1d46aaa837602a218b8c84",
-    ];
   } else if (provider === "AdBoost") {
-    postDocPathArray = [
-      "users/voiceofrize/posts/3ef548095acd43749fdbd288d2afed1f",
-    ];
   } else if (provider === "ArtisticArea") {
-    postDocPathArray = [
-      "users/voiceofrize/posts/3ef548095acd43749fdbd288d2afed1f",
-    ];
   }
 
   return res.status(200).json({
