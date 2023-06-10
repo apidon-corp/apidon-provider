@@ -1,14 +1,12 @@
 import { Flex, Text } from "@chakra-ui/react";
 import React from "react";
-import CodeArea from "./CodeArea";
-import ProgrammingLanguageArea from "./ProgrammingLanguageArea";
+import CurrencyArea from "./CurrencyArea";
+import AmountArea from "./AmountArea";
 
-type Props = {};
-
-export default function AlgorithmArea({}: Props) {
+export default function OfferArea() {
   return (
     <Flex
-      id="algorithm-area"
+      id="offer-area"
       direction="column"
       gap="2"
       borderRadius="10px"
@@ -19,10 +17,10 @@ export default function AlgorithmArea({}: Props) {
       justify="center"
     >
       <Text color="gray.500" fontWeight="700" fontSize="14pt">
-        Algorithm
+        Offer
       </Text>
-      <ProgrammingLanguageArea />
-      <CodeArea />
+      <CurrencyArea />
+      <AmountArea />
     </Flex>
   );
 }

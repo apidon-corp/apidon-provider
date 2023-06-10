@@ -20,7 +20,22 @@ export default function Navbar() {
           md: "none",
           lg: "none",
         }}
-      ></Flex>
+        align="center"
+        justify="space-between"
+      >
+        <Text
+          color="white"
+          fontSize="20pt"
+          fontWeight={700}
+          cursor="pointer"
+          ml="3"
+        >
+          BS-P
+        </Text>
+        <Flex mr="2">
+          <AuthButtons />
+        </Flex>
+      </Flex>
       <Flex
         id="large-screen-navbar"
         position="sticky"

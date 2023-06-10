@@ -1,3 +1,4 @@
+import Footer from "@/Components/Footer/Footer";
 import GeneralAuthenticationModals from "@/Components/Modals/Authentication/GeneralAuthenticationModals";
 import Navbar from "@/Components/Navbar/Navbar";
 import { auth } from "@/Firebase/clientApp";
@@ -43,6 +44,7 @@ export default function Layout({ children }: Props) {
           <Navbar />
           <GeneralAuthenticationModals />
           <Flex justifyContent="center">{children}</Flex>
+          <Footer />
         </Box>
       )}
     </>

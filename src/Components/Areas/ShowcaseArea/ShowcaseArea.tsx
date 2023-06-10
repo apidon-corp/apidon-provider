@@ -1,14 +1,11 @@
 import { Flex, Text } from "@chakra-ui/react";
 import React from "react";
-import CodeArea from "./CodeArea";
-import ProgrammingLanguageArea from "./ProgrammingLanguageArea";
+import DescriptionArea from "./DescriptionArea";
 
-type Props = {};
-
-export default function AlgorithmArea({}: Props) {
+export default function ShowcaseArea() {
   return (
     <Flex
-      id="algorithm-area"
+      id="showcase-area"
       direction="column"
       gap="2"
       borderRadius="10px"
@@ -19,10 +16,9 @@ export default function AlgorithmArea({}: Props) {
       justify="center"
     >
       <Text color="gray.500" fontWeight="700" fontSize="14pt">
-        Algorithm
+        Showcase
       </Text>
-      <ProgrammingLanguageArea />
-      <CodeArea />
+      <DescriptionArea />
     </Flex>
   );
 }

@@ -55,57 +55,59 @@ export default function DescriptionArea() {
   }, [currentUserState.description, candicateDescription]);
 
   return (
-    <Flex direction="column" maxWidth="500px">
+    <Flex direction="column" bg="black" borderRadius="10px" p="5" width="100%">
       <Flex align="center" gap="2">
         <Text color="gray.700" fontWeight="500" fontSize="15pt">
           Description
         </Text>
-        {isDescriptionEditActive ? (
-          <Flex gap="1">
+        <Flex align="center" gap="2">
+          {isDescriptionEditActive ? (
+            <Flex gap="1">
+              <Button
+                variant="solid"
+                colorScheme="blue"
+                size="xs"
+                onClick={handleSaveButton}
+                isLoading={saveButtonLoading}
+                isDisabled={isSaveButtonDisabled}
+              >
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                colorScheme="blue"
+                onClick={handleCancelButton}
+                size="xs"
+                isDisabled={saveButtonLoading}
+              >
+                Cancel
+              </Button>
+            </Flex>
+          ) : (
             <Button
-              variant="solid"
+              variant={currentUserState.description ? "outline" : "solid"}
               colorScheme="blue"
               size="xs"
-              onClick={handleSaveButton}
-              isLoading={saveButtonLoading}
-              isDisabled={isSaveButtonDisabled}
+              onClick={handleEditDescriptionButton}
             >
-              Save
+              Edit
             </Button>
-            <Button
-              variant="outline"
-              colorScheme="blue"
-              onClick={handleCancelButton}
-              size="xs"
-              isDisabled={saveButtonLoading}
-            >
-              Cancel
-            </Button>
-          </Flex>
-        ) : (
-          <Button
-            variant={currentUserState.description ? "outline" : "solid"}
-            colorScheme="blue"
-            size="xs"
-            onClick={handleEditDescriptionButton}
-          >
-            Edit
-          </Button>
-        )}
+          )}
+        </Flex>
       </Flex>
 
       {isDescriptionEditActive ? (
         <Input
           value={candicateDescription}
           onChange={handleTextAreaChange}
-          color="black"
+          color="gray.400"
           fontWeight="700"
-          fontSize="20pt"
+          fontSize="15pt"
           isDisabled={saveButtonLoading}
           variant="flushed"
         />
       ) : (
-        <Text color="black" fontWeight="700" fontSize="20pt">
+        <Text color="gray.400" fontWeight="700" fontSize="15pt">
           {currentUserState.description
             ? currentUserState.description
             : "No description provided yet."}

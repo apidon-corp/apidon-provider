@@ -66,7 +66,7 @@ export default function ImageArea() {
       justify="center"
       align="center"
       direction="column"
-      position="relative"
+      gap="2"
     >
       <Image
         src={
@@ -90,7 +90,7 @@ export default function ImageArea() {
         height="20vh"
       />
       {candicatedImage ? (
-        <Flex position="absolute" bottom="-10" gap="1">
+        <Flex gap="1">
           <Button
             variant="solid"
             colorScheme="blue"
@@ -119,8 +119,6 @@ export default function ImageArea() {
           size="sm"
           rounded="full"
           onClick={handleUploadImageButton}
-          position="absolute"
-          bottom="-10"
         >
           {currentUserState.image ? "New Image" : "Set Image"}
         </Button>

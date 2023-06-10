@@ -1,4 +1,3 @@
-
 import { authenticationModalsStatusAtom } from "@/atoms/authenticationModalsStatusAtom";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import useSignOut from "@/hooks/authHooks/useSignOut";
@@ -50,6 +49,8 @@ export default function AuthButtons() {
             variant="solid"
             colorScheme="blue"
             onClick={handleSignUpButton}
+            size="sm"
+            rounded="full"
           >
             Sign Up
           </Button>
@@ -57,6 +58,8 @@ export default function AuthButtons() {
             variant="outline"
             colorScheme="blue"
             onClick={handleLoginButton}
+            size="sm"
+            rounded="full"
           >
             Log In
           </Button>
@@ -67,6 +70,8 @@ export default function AuthButtons() {
           colorScheme="red"
           onClick={handleSignOutButton}
           isLoading={signOutButtonLoading}
+          size="sm"
+          rounded="full"
         >
           Sign Out
         </Button>

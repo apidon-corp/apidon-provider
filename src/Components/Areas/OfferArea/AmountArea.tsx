@@ -4,7 +4,7 @@ import { Button, Flex, Input, Text, useEditable } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 
-export default function OfferArea() {
+export default function AmountArea() {
   const [currentUserState, setCurrentUserState] =
     useRecoilState(currentUserStateAtom);
 
@@ -22,14 +22,17 @@ export default function OfferArea() {
   const { setOffer } = useSetOffer();
 
   useEffect(() => {
-    const tempSaveButtonDisabled = currentUserState.offer === candicateOffer;
+    const tempSaveButtonDisabled =
+      currentUserState.offer === candicateOffer || !candicateOfferInput;
     setSaveButtonDisabledStatus(tempSaveButtonDisabled);
-  }, [candicateOffer]);
+  }, [candicateOffer, candicateOfferInput]);
 
   const handleOfferInputChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const susCandicateOffer = event.target.value;
+
+    if (!susCandicateOffer) return setCandicateOfferInput(susCandicateOffer);
 
     if (
       susCandicateOffer[susCandicateOffer.length - 1] === "." &&
@@ -70,10 +73,10 @@ export default function OfferArea() {
   };
 
   return (
-    <Flex id="offer-area" direction="column">
+    <Flex borderRadius="10px" p="5" width="100%" bg="black" direction="column">
       <Flex align="center" gap="2">
         <Text color="gray.700" fontWeight="500" fontSize="15pt">
-          Offer
+          Amount
         </Text>
         {isOfferEditActive ? (
           <Flex gap="1">
@@ -108,20 +111,24 @@ export default function OfferArea() {
           </Button>
         )}
       </Flex>
-      {isOfferEditActive ? (
-        <Input
-          value={candicateOfferInput}
-          fontWeight="700"
-          fontSize="20pt"
-          variant="flushed"
-          onChange={handleOfferInputChange}
-          disabled={saveButtonLoading}
-        />
-      ) : (
-        <Text color="black" fontWeight="700" fontSize="20pt">
-          {currentUserState.offer}
-        </Text>
-      )}
+
+      <Flex align="center">
+        {isOfferEditActive ? (
+          <Input
+            value={candicateOfferInput}
+            fontWeight="700"
+            fontSize="20pt"
+            variant="flushed"
+            color="blue.500"
+            onChange={handleOfferInputChange}
+            disabled={saveButtonLoading}
+          />
+        ) : (
+          <Text color="blue.500" fontWeight="700" fontSize="20pt">
+            {currentUserState.offer}
+          </Text>
+        )}
+      </Flex>
     </Flex>
   );
 }
