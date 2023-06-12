@@ -49,7 +49,6 @@ export default async function handler(
 
   let postDocPathArray: string[] = [];
   if (provider === "SmartFeed") {
-    console.log("SmartFeed requested.");
     postDocPathArray = [
       "users/savranyagizefe/posts/06c3c8c5489243e69ac01563082a6896",
       "users/merenoz/posts/e886faa8d67e44d5a711b5895349e3a0",
@@ -58,7 +57,6 @@ export default async function handler(
       "users/savranyagizefe/posts/35803858eaa94ce6aa897555d3907fe1",
     ];
   } else if (provider === "AdBoost") {
-    console.log("AdBoost requested.");
     postDocPathArray = [
       "users/merenoz/posts/fcd23216569e4f3480a066bb0426d028",
       "users/savranyagizefe/posts/f753afaf4f6a45a186b439eddd3f7736",
@@ -66,8 +64,7 @@ export default async function handler(
       "users/eob/posts/c4fd104e7ea9483e9887eb43de5724a1",
       "users/merenoz/posts/1d4f4f06cd6944c0a1a50d266f8cc3b9",
     ];
-  } else if (provider === "ArtisticArea") {
-    console.log("Artistic requested.");
+  } else if (provider === "ArtisticAura") {
     postDocPathArray = [
       "users/savranyagizefe/posts/75fc3c3f0fdd4b1dae3fd21b126e82c5",
       "users/merenoz/posts/895afc30d2fb449c9975b95aea594a0a",
