@@ -6,8 +6,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  return res.status(503).json({ error: "No-Provider-Meanwhile" });
-
   const { email, password, providerName } = req.body;
 
   let uidCreated = "";

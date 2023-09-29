@@ -10,8 +10,9 @@ export default async function handler(
    */
   res.setHeader(
     "Access-Control-Allow-Origin",
-    "https://blocksocial.vercel.app"
+    process.env.NEXT_PUBLIC_ALLOW_CORS_ADDRESS as string
   );
+
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,authorization");
 
   // Handle preflight OPTIONS request

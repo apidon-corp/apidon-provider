@@ -30,7 +30,7 @@ export default function Navbar() {
           cursor="pointer"
           ml="3"
         >
-          BS-P
+          apidon-Pro
         </Text>
         <Flex mr="2">
           <AuthButtons />
@@ -56,7 +56,7 @@ export default function Navbar() {
       >
         <Flex ml="5">
           <Text color="white" fontSize="20pt" fontWeight={700} cursor="pointer">
-            BlockSocial for Providers
+            apdion-Pro
           </Text>
         </Flex>
         <Flex position="absolute" right="5">

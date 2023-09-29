@@ -7,9 +7,7 @@ export default async function handler(
 ) {
   const { authorization } = req.headers;
   const { username, provider } = req.body;
-
-  console.log(provider, username);
-
+  
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
     return res.status(401).json({ error: "unauthorized" });
 

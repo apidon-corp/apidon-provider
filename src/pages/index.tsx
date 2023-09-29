@@ -1,12 +1,12 @@
 import ShowcaseArea from "@/Components/Areas/ShowcaseArea/ShowcaseArea";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 
+import AlgorithmArea from "@/Components/Areas/AlgorithmArea/AlgorithmArea";
 import OfferArea from "@/Components/Areas/OfferArea/OfferArea";
 import StatsArea from "@/Components/Areas/StatsArea/StatsArea";
 import TopArea from "@/Components/Areas/TopArea/TopArea";
 import { Flex } from "@chakra-ui/react";
 import { useRecoilValue } from "recoil";
-import AlgorithmArea from "@/Components/Areas/AlgorithmArea/AlgorithmArea";
 
 export default function Home() {
   const currentUserState = useRecoilValue(currentUserStateAtom);

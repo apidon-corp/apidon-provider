@@ -37,7 +37,7 @@ export default function Layout({ children }: Props) {
     <>
       {loading ? (
         <Center height="100vh">
-          <Image src="/bsicon.jpg" align="center" width="90px" />
+          <Image src="/og.png" align="center" width="90px" />
         </Center>
       ) : (
         <Box>

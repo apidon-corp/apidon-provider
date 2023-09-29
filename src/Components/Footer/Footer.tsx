@@ -11,7 +11,7 @@ export default function Footer() {
       mt={3}
     >
       <Text as="b" textColor="gray.300" fontSize="15pt">
-        BlockSocial
+        Apidon
       </Text>
       <Text as="b" textColor="gray.300" fontSize="9pt">
         Made with ❤️ in Istanbul
@@ -23,19 +23,13 @@ export default function Footer() {
         justify="center"
         cursor="pointer"
         onClick={() => {
-          window.open(
-            "https://github.com/aboveStars/blocksocial-v2-frontend",
-            "blank"
-          );
+          window.open("https://github.com/aboveStars/apidon-provider", "blank");
         }}
       >
         <Text as="b" textColor="gray.300" fontSize="8pt">
           Give ⭐️ on GitHub
         </Text>
       </Flex>
-      <Text as="i" textColor="gray.400" fontSize="5pt">
-        Version 0.6.3
-      </Text>
     </Flex>
   );
 }
