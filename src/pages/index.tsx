@@ -2,12 +2,12 @@ import ShowcaseArea from "@/Components/Areas/ShowcaseArea/ShowcaseArea";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 
 import AlgorithmArea from "@/Components/Areas/AlgorithmArea/AlgorithmArea";
+import DeepLearningArea from "@/Components/Areas/DeepLearningArea/DeepLearningArea";
 import OfferArea from "@/Components/Areas/OfferArea/OfferArea";
 import StatsArea from "@/Components/Areas/StatsArea/StatsArea";
 import TopArea from "@/Components/Areas/TopArea/TopArea";
 import { Button, Flex } from "@chakra-ui/react";
 import { useRecoilValue } from "recoil";
-import DeepLearningArea from "@/Components/Areas/DeepLearningArea/DeepLearningArea";
 
 export default function Home() {
   const currentUserState = useRecoilValue(currentUserStateAtom);
@@ -23,13 +23,12 @@ export default function Home() {
           gap="5"
           px="1"
         >
-
           <TopArea />
           <ShowcaseArea />
           <StatsArea />
           <OfferArea />
           <AlgorithmArea />
-          <DeepLearningArea/>
+          <DeepLearningArea />
         </Flex>
       )}
       {!currentUserState.isThereCurrentUser && (

@@ -51,6 +51,16 @@ export default async function handler(
   }
 
   try {
+    await firestore.doc(`users/${providerName}/postThemes/postThemes`).set({});
+  } catch (error) {
+    console.error(
+      "Error on creation of provider. (We were creating postThemes/postThemes Doc for it.)",
+      error
+    );
+    return res.status(503).json({ error: "error" });
+  }
+
+  try {
     const newShowcaseItemObject: IShowcaseItem = {
       name: providerName,
       description: "",
