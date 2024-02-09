@@ -44,12 +44,12 @@ export default async function handler(
    *  3-) Update posts/posts doc's postsArray array that => postDocPath and Timestamp
    */
 
-  await lock.acquire(`${username}-${postDocPath}`, async () => {
+  await lock.acquire(`${username}`, async () => {
     /**
      * 0-) Geting what image is about from API.
      * Sends imageURL to Classify Modal and gets results as an array.....
      */
-    const probabiltiesArray = ["a", "e"];
+    const probabiltiesArray = ["a", "b"];
 
     let themesArray: ThemeObject[] = [];
 
@@ -81,7 +81,7 @@ export default async function handler(
     }
 
     /**
-     * 2-) Update providerId/postThemes/postThemes doc's postThemesArray array that => postId123 is about cat,dogs, pumas.
+     * 2-) Update all provider's  providerId/postThemes/postThemes doc's postThemesArray array that => postId123 is about cat,dogs, pumas.
      */
 
     const postThemeObject: PostThemeObject = {
@@ -90,17 +90,35 @@ export default async function handler(
       ts: Date.now(),
     };
 
+    let providerDocs;
     try {
-      await firestore.doc(`users/${providerId}/postThemes/postThemes`).update({
-        postThemesArray: fieldValue.arrayUnion({ ...postThemeObject }),
-      });
+      providerDocs = await firestore.collection("users").get();
     } catch (error) {
-      console.error("Errron on updating postThemes/postThemes doc....", error);
-      return res
-        .status(500)
-        .send(
-          "Internal Server Error on updating postThemes array on provider/postThemes/postThemes."
+      console.error(
+        "Error on postClassification API. We were getting all providers docs to update their postThemes/postThemes doc.",
+        error
+      );
+      return res.status(500).send("Internal Server Error");
+    }
+
+    for (const providerDoc of providerDocs.docs) {
+      try {
+        await firestore
+          .doc(`${providerDoc.ref.path}/postThemes/postThemes`)
+          .update({
+            postThemesArray: fieldValue.arrayUnion({ ...postThemeObject }),
+          });
+      } catch (error) {
+        console.error(
+          "Errron on updating postThemes/postThemes doc....",
+          error
         );
+        return res
+          .status(500)
+          .send(
+            "Internal Server Error on updating postThemes array on provider/postThemes/postThemes."
+          );
+      }
     }
 
     /**
