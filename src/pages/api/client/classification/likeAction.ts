@@ -57,9 +57,9 @@ export default async function handler(
 
       const themesArray = postThemesDoc.data()!
         .postThemesArray as PostThemeObject[];
-      const postThemeObject = themesArray.find(
+      const postThemeObject: PostThemeObject = themesArray.find(
         (postThemeObject) => postThemeObject.postDocPath === postDocPath
-      );
+      ) as PostThemeObject;
       if (!postThemeObject)
         throw new Error("Liked post doesn't exist in provider's database.");
       postThemes = postThemeObject.themes;

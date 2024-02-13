@@ -49,7 +49,7 @@ export default async function handler(
      * 0-) Geting what image is about from API.
      * Sends imageURL to Classify Modal and gets results as an array.....
      */
-    const probabiltiesArray = ["a", "b"];
+    const probabiltiesArray = ["m", "n"];
 
     let themesArray: ThemeObject[] = [];
 

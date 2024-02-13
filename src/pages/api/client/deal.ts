@@ -1,4 +1,6 @@
 import { fieldValue, firestore } from "@/Firebase/adminApp";
+import { PostThemeObject, ThemeObject } from "@/types/Classification";
+import { ClientObject, InteractedPostObject } from "@/types/Client";
 import { IDealResult } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -7,7 +9,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { authorization } = req.headers;
-  const { username, provider } = req.body;
+  const { username, provider, interactedPostsObjectsArray } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
     return res.status(401).json({ error: "unauthorized" });
@@ -56,13 +58,60 @@ export default async function handler(
     yield: providerDocSnapshot.data()?.offer,
   };
 
-  let clientObject = {
+  /**
+   * We need to analyze user and create its "themesArray" array, so:
+   *  1-) We have all interaction informations as "like", "comment", "uploaded" and their activity times.
+   *  2-) We need to analyze this information and create themes array.
+   *  3-) We need to use classification API's for it or not.
+   */
+
+  const themesArrayToServer: ThemeObject[] = [];
+
+  try {
+    const postThemesDoc = await firestore
+      .doc(`users/${provider}/postThemes/postThemes`)
+      .get();
+    if (!postThemesDoc.exists)
+      throw new Error("Post Themes Doc doesn't exist.");
+
+    const themesArray = postThemesDoc.data()!
+      .postThemesArray as PostThemeObject[];
+
+    for (const interactedPostObject of interactedPostsObjectsArray as InteractedPostObject[]) {
+      const foundInteractedPostObjectInProviderDatabase = themesArray.find(
+        (a) => a.postDocPath === interactedPostObject.postDocPath
+      );
+      if (!foundInteractedPostObjectInProviderDatabase) {
+        console.warn(
+          "Interacted post doesn't exist in postThemes/postThemes in Provider's database."
+        );
+        continue;
+      }
+
+      let createdThemesArray: ThemeObject[] = [];
+      for (const theme of foundInteractedPostObjectInProviderDatabase.themes) {
+        const newCreatedThemeObject: ThemeObject = {
+          theme: theme,
+          ts: foundInteractedPostObjectInProviderDatabase.ts,
+        };
+        createdThemesArray.push(newCreatedThemeObject);
+      }
+
+      themesArrayToServer.push(...createdThemesArray);
+    }
+  } catch (error) {
+    console.error("errror while creating themes for client", error);
+    return res.status(500).send("Internal Server Error");
+  }
+
+  let clientObject: ClientObject = {
     active: true,
     endTime: startTime + thirtyDay,
     score: 0,
     startTime: startTime,
     debt: providerDocSnapshot.data()?.offer,
     withdrawn: false,
+    themesArray: [...themesArrayToServer],
   };
 
   try {
