@@ -1,4 +1,4 @@
-import { bucket, firestore } from "@/Firebase/adminApp";
+import { bucket } from "@/Firebase/adminApp";
 import getDisplayName from "@/apiUtils";
 import { NextApiRequest, NextApiResponse } from "next";
 

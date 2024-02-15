@@ -1,7 +1,7 @@
 import ShowcaseArea from "@/Components/Areas/ShowcaseArea/ShowcaseArea";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 
-import AlgorithmArea from "@/Components/Areas/AlgorithmArea/AlgorithmArea";
+import AlgorithmArea from "@/Components/Areas/ModelArea/ModelArea";
 import DeepLearningArea from "@/Components/Areas/DeepLearningArea/DeepLearningArea";
 import OfferArea from "@/Components/Areas/OfferArea/OfferArea";
 import StatsArea from "@/Components/Areas/StatsArea/StatsArea";
@@ -28,7 +28,6 @@ export default function Home() {
           <StatsArea />
           <OfferArea />
           <AlgorithmArea />
-          <DeepLearningArea />
         </Flex>
       )}
       {!currentUserState.isThereCurrentUser && (
