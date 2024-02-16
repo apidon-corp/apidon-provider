@@ -1,9 +1,10 @@
 import { auth, firestore } from "@/Firebase/clientApp";
 import useUpdateModelSettings from "@/hooks/modelHooks/useUpdateModelSettings";
+import useUploadModel from "@/hooks/modelHooks/useUploadModel";
 import { ModelSettings } from "@/types/Model";
 import { Button, Flex, Input, Select, Text } from "@chakra-ui/react";
 import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 export default function AlgorithmArea() {
   const modelInputRef = useRef<HTMLInputElement>(null);
@@ -23,26 +24,103 @@ export default function AlgorithmArea() {
     });
 
   const [loading, setLoading] = useState(false);
+  const [modelFileChoosen, setModelFileChoosen] = useState<File | null>(null);
+
+  const [differenceMade, setDifferenceMade] = useState(false);
+
+  const { updateModelSettings } = useUpdateModelSettings();
+  const { uploadModel } = useUploadModel();
+
+  // Initially fetch data...
+  useEffect(() => {
+    handleGetInitialDataFromServer();
+  }, []);
+
+  // Set buttons status...
+  useEffect(() => {
+    if (modelFileChoosen !== null) return setDifferenceMade(true);
+
+    const currentValues = Object.values(modelSettingsState);
+    const initialValues = Object.values(initialModelSettingState);
+
+    for (const currentValue of currentValues) {
+      if (!initialValues.includes(currentValue)) {
+        // There is difference between inital and current values...
+        setDifferenceMade(true);
+        break;
+      } else {
+        setDifferenceMade(false);
+      }
+    }
+  }, [modelSettingsState, initialModelSettingState, modelFileChoosen]);
 
   const handleSelection = async (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    setModelSettingsState((prev) => ({
-      ...prev,
-      [event.target.id]: event.target.value,
-    }));
-  };
+    if (event.target.id === "modelEnvironment") {
+      // We need to set default extension if "modelEnvironment" changed.
+      let defaultExtension: "h5" | "pt" = "h5";
+      if (event.target.value === "tensorflow") {
+        defaultExtension = "h5";
+      } else if (event.target.value === "pytorch") {
+        defaultExtension = "pt";
+      } else if (event.target.value === "keras") {
+        defaultExtension = "h5";
+      }
 
-  const { updateModelSettings } = useUpdateModelSettings();
+      setModelSettingsState((prev) => ({
+        ...prev,
+        [event.target.id]: event.target.value,
+        modelExtension: defaultExtension,
+      }));
+    } else {
+      setModelSettingsState((prev) => ({
+        ...prev,
+        [event.target.id]: event.target.value,
+      }));
+    }
+  };
 
   const handleSaveChangesButton = async () => {
     setLoading(true);
-    const operationResult = await updateModelSettings(modelSettingsState);
+
+    let newModelPath = "";
+    let modelSettingsFinal = { ...modelSettingsState };
+
+    if (modelFileChoosen) {
+      const uploadResult = await uploadModel(
+        modelFileChoosen,
+        modelSettingsState.modelExtension
+      );
+
+      if (!uploadResult) {
+        console.error("Upload result is not good. Aborting....");
+        setLoading(false);
+        return;
+      }
+
+      // We checked if uploadResult is false or not above, so below statement is string.
+      newModelPath = uploadResult;
+
+      modelSettingsFinal = {
+        ...modelSettingsState,
+        modelPath: newModelPath,
+      };
+    }
+
+    setModelSettingsState(modelSettingsFinal);
+
+    // Just for newModelPath....
+
+    const operationResult = await updateModelSettings(modelSettingsFinal);
+
+    // Acutally just for newModelPath....
 
     if (operationResult) {
-      setInitialModelSettingState(modelSettingsState);
+      setInitialModelSettingState(modelSettingsFinal);
+      clearModelInput();
     } else {
-      // Giving Error...
+      console.error("Operation Result is not good from 'updateModelSettings'");
     }
 
     setLoading(false);
@@ -50,6 +128,13 @@ export default function AlgorithmArea() {
 
   const handleDiscardChangesButton = async () => {
     setModelSettingsState(initialModelSettingState);
+
+    clearModelInput();
+  };
+
+  const clearModelInput = () => {
+    setModelFileChoosen(null);
+    if (modelInputRef.current) modelInputRef.current.value = "";
   };
 
   const handleGetInitialDataFromServer = async () => {
@@ -79,9 +164,15 @@ export default function AlgorithmArea() {
     setModelSettingsState(modelSettingsDataInServer);
   };
 
-  useEffect(() => {
-    handleGetInitialDataFromServer();
-  }, []);
+  const handleModelFileChange = async (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!event.target.files) return;
+
+    const modelFileFromInput = event.target.files[0];
+
+    setModelFileChoosen(modelFileFromInput);
+  };
 
   return (
     <Flex
@@ -123,6 +214,7 @@ export default function AlgorithmArea() {
               borderWidth: "0px",
               paddingLeft: 0,
             }}
+            isDisabled={loading}
           >
             <option value="tensorflow">TensorFlow</option>
             <option value="pytorch">PyTorch</option>
@@ -153,6 +245,7 @@ export default function AlgorithmArea() {
               borderWidth: "0px",
               paddingLeft: 0,
             }}
+            isDisabled={loading}
           >
             <option value="64x64">64 x 64</option>
             <option value="120x120">120 x 120</option>
@@ -186,13 +279,23 @@ export default function AlgorithmArea() {
               borderWidth: "0px",
               paddingLeft: 0,
             }}
+            isDisabled={loading}
           >
-            <option value="h5">.h5 (Keras/TensorFlow)</option>
-            <option value="tflite">.tflite (TensorFlow Lite)</option>
-            <option value="pb">.pb (TensorFlow Protobuf)</option>
-            <option value="pt">.pt (PyTorch)</option>
-            <option value="pth">.pth (PyTorch)</option>
-            <option value="onnx">.onnx (ONNX)</option>
+            {modelSettingsState.modelEnvironment === "tensorflow" && (
+              <>
+                <option value="h5">.h5</option>
+                <option value="tflite">.tflite</option>
+              </>
+            )}
+            {modelSettingsState.modelEnvironment === "keras" && (
+              <option value="h5">.h5</option>
+            )}
+            {modelSettingsState.modelEnvironment === "pytorch" && (
+              <>
+                <option value="pt">.pt</option>
+                <option value="pth">.pth</option>
+              </>
+            )}
           </Select>
         </Flex>
         <Flex
@@ -214,17 +317,35 @@ export default function AlgorithmArea() {
               onClick={() => {
                 if (modelInputRef.current) modelInputRef.current.click();
               }}
+              isDisabled={loading}
             >
-              Upload New Model
+              Choose New Model
             </Button>
           </Flex>
 
-          <Text color="pink.500" fontWeight="700" fontSize="20pt">
-            <a href=" https://google.com">{modelSettingsState.modelPath}</a>
+          <Text
+            color="pink.500"
+            fontWeight="700"
+            fontSize="20pt"
+            maxWidth="15em"
+            isTruncated
+          >
+            <a
+              href={
+                modelSettingsState.modelPath
+                  ? modelSettingsState.modelPath
+                  : "https://apidon.com"
+              }
+            >
+              {modelFileChoosen
+                ? modelFileChoosen.name
+                : modelSettingsState.modelPath}
+            </a>
           </Text>
 
           <Input
             ref={modelInputRef}
+            onChange={handleModelFileChange}
             type="file"
             accept={`.${modelSettingsState.modelExtension}`}
             hidden
@@ -233,24 +354,25 @@ export default function AlgorithmArea() {
       </Flex>
       <Flex justify="center" align="center" gap="2">
         <Button
-          variant="outline"
-          colorScheme="red"
-          size="md"
+          variant="solid"
+          colorScheme="blue"
+          size="sm"
           onClick={() => {
             handleSaveChangesButton();
           }}
           isLoading={loading}
+          isDisabled={!differenceMade}
         >
           Save Model Changes
         </Button>
         <Button
           variant="outline"
           colorScheme="blue"
-          size="md"
+          size="sm"
           onClick={() => {
             handleDiscardChangesButton();
           }}
-          isDisabled={loading}
+          isDisabled={loading || !differenceMade}
         >
           Discard Changes
         </Button>
