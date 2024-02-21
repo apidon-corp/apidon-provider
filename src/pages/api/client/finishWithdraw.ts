@@ -8,7 +8,10 @@ export default async function handler(
   /**
    * To handle cors policy...
    */
-  res.setHeader("Access-Control-Allow-Origin", process.env.NEXT_PUBLIC_ALLOW_CORS_ADDRESS as string);
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    process.env.NEXT_PUBLIC_ALLOW_CORS_ADDRESS as string
+  );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,authorization");
 
   // Handle preflight OPTIONS request
@@ -22,10 +25,10 @@ export default async function handler(
   const { username, provider, startTime } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).send("unauthorized");
 
   if (!username || !provider || !startTime) {
-    return res.status(422).json({ error: "Invalid prop or props" });
+    return res.status(422).send("Invalid Prop or Props");
   }
 
   try {
@@ -40,7 +43,7 @@ export default async function handler(
       "Error on finish withdraw. (We were updating client doc)",
       error
     );
-    return res.status(503).json({ error: "Firebase-Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   try {
@@ -52,7 +55,7 @@ export default async function handler(
       "Error on finish withdraw. (We were updating provider doc to decrease client count)",
       error
     );
-    return res.status(503).json({ error: "Firebase-Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   try {
@@ -64,8 +67,8 @@ export default async function handler(
       "Error on finish withdraw. (We were updating showcase doc to decrease client count",
       error
     );
-    return res.status(503).json({ error: "Firebase-Error" });
+    return res.status(503).send("Firebase Error");
   }
 
-  return res.status(200).json({});
+  return res.status(200).send("Success");
 }

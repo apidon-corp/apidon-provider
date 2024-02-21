@@ -26,7 +26,7 @@ export default async function handler(
   const { providerName } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).send("unauthorized");
 
   let providerDocSnapshot: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>;
   try {
@@ -36,12 +36,12 @@ export default async function handler(
       "Error while getting provider information. (We were getting doc)",
       error
     );
-    return res.status(503).json({ error: "Firebaese Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   if (!providerDocSnapshot.exists) {
     console.error(`Provider doc of ${providerName} doesn't exist`);
-    return res.status(422).json({ error: "Invalid prop or props" });
+    return res.status(422).send("Invalid Prop or Props");
   }
 
   const providerInformation = {

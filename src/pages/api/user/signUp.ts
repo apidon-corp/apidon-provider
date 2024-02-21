@@ -18,7 +18,7 @@ export default async function handler(
     uidCreated = uid;
   } catch (error) {
     console.error("Error while creating user. (We were creating user.)", error);
-    return res.status(503).json({ error: "error" });
+    return res.status(503).send("Internal Server Error");
   }
 
   const createdProviderInformation: UserInServer = {
@@ -47,7 +47,7 @@ export default async function handler(
       "Error while creating provider. (We were creating doc for it.)",
       error
     );
-    return res.status(503).json({ error: "error" });
+    return res.status(503).send("Firebase Error");
   }
 
   try {
@@ -57,7 +57,7 @@ export default async function handler(
       "Error on creation of provider. (We were creating postThemes/postThemes Doc for it.)",
       error
     );
-    return res.status(503).json({ error: "error" });
+    return res.status(503).send("Firebase Error");
   }
 
   try {
@@ -81,7 +81,7 @@ export default async function handler(
       "Error while sign up. (We were creating showcase doc.)",
       error
     );
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   return res

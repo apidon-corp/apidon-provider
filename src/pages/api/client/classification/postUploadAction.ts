@@ -31,7 +31,7 @@ export default async function handler(
   const { username, postDocPath, imageURL, providerId, startTime } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).send("unauthorized");
 
   if (!username || !postDocPath || !imageURL || !providerId)
     return res.status(422).send("Invalid Prop or Props.");

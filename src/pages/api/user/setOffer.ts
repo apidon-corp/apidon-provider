@@ -12,10 +12,9 @@ export default async function handler(
 
   const operationFromUsername = await getDisplayName(authorization as string);
 
-  if (!operationFromUsername)
-    return res.status(401).json({ error: "unauthorized" });
+  if (!operationFromUsername) return res.status(401).send("unauthorized");
 
-  if (!offer) return res.status(422).json({ error: "Invalid prop or props" });
+  if (!offer) return res.status(422).send("Invalid Prop or Props");
 
   try {
     await firestore.doc(`users/${operationFromUsername}`).update({
@@ -26,7 +25,7 @@ export default async function handler(
       "Error while setting offer. (We were updating user doc.",
       error
     );
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   try {
@@ -38,8 +37,8 @@ export default async function handler(
       "Error while setting offer. (We were updating showcase doc.",
       error
     );
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
-  return res.status(200).json({});
+  return res.status(200).send("Success");
 }

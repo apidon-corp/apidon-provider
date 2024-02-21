@@ -12,10 +12,10 @@ export default async function handler(
   const { username, provider, interactedPostsObjectsArray } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).send("unauthorized");
 
   if (!username || !provider) {
-    return res.status(422).json({ error: "Invalid prop or props" });
+    return res.status(422).send("Invalid prop or props");
   }
 
   let providerDocSnapshot: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>;
@@ -23,11 +23,11 @@ export default async function handler(
     providerDocSnapshot = await firestore.doc(`users/${provider}`).get();
   } catch (error) {
     console.error("Error while deal. (We were getting provider doc snapshot");
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   if (!providerDocSnapshot.exists)
-    return res.status(422).json({ error: "Invalid Provider name" });
+    return res.status(422).send("Invalid Provider Name");
 
   try {
     await providerDocSnapshot.ref.update({
@@ -36,7 +36,7 @@ export default async function handler(
     });
   } catch (error) {
     console.error("error while deal. (We were updating provider doc.");
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
   try {
     await firestore.doc(`showcase/${provider}`).update({
@@ -46,7 +46,7 @@ export default async function handler(
     console.error(
       `error while deal. (We were updating showcase doc for: ${provider}`
     );
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
   const startTime = Date.now();
   const thirtyDay = 30 * 24 * 60 * 60 * 1000;
@@ -120,7 +120,7 @@ export default async function handler(
       .set(clientObject);
   } catch (error) {
     console.error("Error while deal. We were adding client doc.");
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   return res.status(200).json({ dealResult: dealResultObject });

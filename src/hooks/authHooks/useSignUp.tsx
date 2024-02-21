@@ -41,7 +41,7 @@ export default function useSignUp() {
     }
 
     if (!response.ok) {
-      console.error("Error from signUp API", await response.json());
+      console.error("Error from signUp API", await response.text());
       return false;
     }
 

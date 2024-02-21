@@ -26,10 +26,10 @@ export default async function handler(
   const { username, provider, score, startTime } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).send("unauthorized");
 
   if (!username || !provider || !score || !startTime) {
-    return res.status(422).json({ error: "Invalid prop or props" });
+    return res.status(422).send("Invalid Prop or Props");
   }
 
   // get client doc...
@@ -41,7 +41,7 @@ export default async function handler(
       .get();
   } catch (error) {
     console.error("Error while rating. (We were getting client doc", error);
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   const scoreUserGaveBefore = clientDoc.data()?.score;
@@ -58,7 +58,7 @@ export default async function handler(
       "Error while taking rate. (We were updating client doc",
       error
     );
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   // update showcase
@@ -71,7 +71,7 @@ export default async function handler(
     });
   } catch (error) {
     console.error("Error while updating score . (We were updating showcase)");
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   // update provider doc
@@ -87,8 +87,8 @@ export default async function handler(
       "Error while taking score. (We were updating provider doc)",
       error
     );
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
-  return res.status(200).json({});
+  return res.status(200).send("Success");
 }

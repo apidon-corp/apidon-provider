@@ -14,10 +14,10 @@ export default async function handler(
   const { username, provider, startTime } = req.body;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).send("Unauthorized");
 
   if (!username || !provider) {
-    return res.status(422).json({ error: "Invalid prop or props" });
+    return res.status(422).send("Invalid Prop or Props");
   }
 
   let providerDocSnapshot: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>;
@@ -25,11 +25,11 @@ export default async function handler(
     providerDocSnapshot = await firestore.doc(`users/${provider}`).get();
   } catch (error) {
     console.error("Error while getting providerDocSnapshot", error);
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   if (!providerDocSnapshot.exists)
-    return res.status(422).json({ error: "Invalid Proivder Name" });
+    return res.status(422).send("Invalid Provider Name");
 
   /**
    * 1-) Getting themes array of user

@@ -26,7 +26,7 @@ export default async function handler(
   const { authorization } = req.headers;
 
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).send("Unauthorized");
 
   let providersShowcaseCollectionSnapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>;
   try {
@@ -38,14 +38,14 @@ export default async function handler(
       "Error while creating providersShowCollection. (We were getting provider collection showcase)",
       error
     );
-    return res.status(503).json({ error: "Firebase Error" });
+    return res.status(503).send("Firebase Error");
   }
 
   if (providersShowcaseCollectionSnapshot.size === 0) {
     console.error(
       "Error while creating providersShowCollection. There is no document."
     );
-    return res.status(503).json({ error: "Internal Server Error" });
+    return res.status(503).send("Internal Server Error");
   }
   let providersShowcaseDatas: IShowcaseItem[] = [];
   for (const proivderDoc of providersShowcaseCollectionSnapshot.docs) {

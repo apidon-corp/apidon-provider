@@ -11,7 +11,6 @@ import {
 import React, { useRef, useState } from "react";
 
 import { AiOutlineCloudUpload } from "react-icons/ai";
-import { isReadonlyKeywordOrPlusOrMinusToken } from "typescript";
 
 export default function DeepLearningArea() {
   const [image, setImage] = useState("");
@@ -86,7 +85,7 @@ export default function DeepLearningArea() {
       setOpStarted(false);
       return console.log(
         "There is an error in API side.",
-        await response.json()
+        await response.text()
       );
     }
 

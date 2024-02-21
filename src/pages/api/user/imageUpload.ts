@@ -19,13 +19,11 @@ export default async function handler(
 
   const operationFromUsername = await getDisplayName(authorization as string);
 
-  if (!operationFromUsername)
-    return res.status(401).json({ error: "unAuthorized" });
+  if (!operationFromUsername) return res.status(401).send("unauthorized");
 
-  if (!image) return res.status(422).json({ error: "Invalid prop or props" });
+  if (!image) return res.status(422).send("unauthorized");
 
-  if (req.method !== "POST")
-    return res.status(405).json({ error: "method not allowed" });
+  if (req.method !== "POST") return res.status(405).send("unauthorized");
 
   const file = bucket.file(`users/${operationFromUsername}/image`);
   const buffer = Buffer.from(image.split(",")[1], "base64");
@@ -44,7 +42,7 @@ export default async function handler(
       "Error while updating profile photo. (We are on 'file saving'.)",
       error
     );
-    return res.status(503).json({ error: "Firebase error" });
+    return res.status(503).send("Firebase Error");
   }
 
   try {
@@ -53,7 +51,7 @@ export default async function handler(
     console.error(
       "Error while updating profile photo.(We are on 'making file public')"
     );
-    return res.status(503).json({ error: "Firebase error" });
+    return res.status(503).send("Firebase Error");
   }
 
   let publicURL = "";
@@ -67,7 +65,7 @@ export default async function handler(
       "Error while updating post.(Process were on updating doc.)",
       error
     );
-    return res.status(503).json({ error: "Firebase error" });
+    return res.status(503).send("Firebase Error");
   }
 
   try {
@@ -80,7 +78,7 @@ export default async function handler(
       error
     );
 
-    return res.status(503).json({ error: "Firebase error" });
+    return res.status(503).send("Firebase Error");
   }
 
   return res.status(200).json({
