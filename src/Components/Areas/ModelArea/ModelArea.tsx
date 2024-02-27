@@ -5,6 +5,9 @@ import { ModelSettings } from "@/types/Model";
 import { Button, Flex, Input, Select, Text } from "@chakra-ui/react";
 import { doc, getDoc } from "firebase/firestore";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import BillingModal from "./BillingModal";
+import { useRecoilState } from "recoil";
+import { billingModalStatusAtom } from "@/atoms/billingModalStatusAtom";
 
 export default function AlgorithmArea() {
   const modelInputRef = useRef<HTMLInputElement>(null);
@@ -30,6 +33,10 @@ export default function AlgorithmArea() {
 
   const { updateModelSettings } = useUpdateModelSettings();
   const { uploadModel } = useUploadModel();
+
+  const [billingModalState, setBillingModalState] = useRecoilState(
+    billingModalStatusAtom
+  );
 
   // Initially fetch data...
   useEffect(() => {
@@ -82,6 +89,9 @@ export default function AlgorithmArea() {
   };
 
   const handleSaveChangesButton = async () => {
+    setBillingModalState({ isOpen: true });
+
+    /**
     setLoading(true);
 
     let newModelPath = "";
@@ -124,6 +134,8 @@ export default function AlgorithmArea() {
     }
 
     setLoading(false);
+
+    */
   };
 
   const handleDiscardChangesButton = async () => {
@@ -175,208 +187,211 @@ export default function AlgorithmArea() {
   };
 
   return (
-    <Flex
-      id="algorithm-area"
-      direction="column"
-      gap="2"
-      borderRadius="10px"
-      p="2"
-      bg="gray.900"
-      width="100%"
-      justify="center"
-      align="center"
-    >
-      <Text color="gray.500" fontWeight="700" fontSize="14pt">
-        Classification Model
-      </Text>
-      <Flex id="Model-Settings" direction="column" gap="5px" width="100%">
-        <Flex
-          id="model-environemt"
-          direction="column"
-          bg="black"
-          borderRadius="10px"
-          p="5"
-          width="100%"
-        >
-          <Text color="gray.700" fontWeight="500" fontSize="15pt">
-            Model Environment
-          </Text>
-          <Select
-            id="modelEnvironment"
-            onChange={handleSelection}
-            value={modelSettingsState.modelEnvironment}
-            iconColor="white"
-            sx={{
-              backgroundColor: "black",
-              textColor: "#D69E2E",
-              fontWeight: "700",
-              fontSize: "20pt",
-              borderWidth: "0px",
-              paddingLeft: 0,
-            }}
-            isDisabled={loading}
+    <>
+      <BillingModal />
+      <Flex
+        id="algorithm-area"
+        direction="column"
+        gap="2"
+        borderRadius="10px"
+        p="2"
+        bg="gray.900"
+        width="100%"
+        justify="center"
+        align="center"
+      >
+        <Text color="gray.500" fontWeight="700" fontSize="14pt">
+          Classification Model
+        </Text>
+        <Flex id="Model-Settings" direction="column" gap="5px" width="100%">
+          <Flex
+            id="model-environemt"
+            direction="column"
+            bg="black"
+            borderRadius="10px"
+            p="5"
+            width="100%"
           >
-            <option value="tensorflow">TensorFlow</option>
-            <option value="pytorch">PyTorch</option>
-            <option value="keras">Keras</option>
-          </Select>
-        </Flex>
-        <Flex
-          id="input-imagesize"
-          direction="column"
-          bg="black"
-          borderRadius="10px"
-          p="5"
-          width="100%"
-        >
-          <Text color="gray.700" fontWeight="500" fontSize="15pt">
-            Input Image Sizes
-          </Text>
-          <Select
-            id="inputImageSizes"
-            onChange={handleSelection}
-            value={modelSettingsState.inputImageSizes}
-            iconColor="white"
-            sx={{
-              backgroundColor: "black",
-              textColor: "#00B5D8",
-              fontWeight: "700",
-              fontSize: "20pt",
-              borderWidth: "0px",
-              paddingLeft: 0,
-            }}
-            isDisabled={loading}
-          >
-            <option value="64x64">64 x 64</option>
-            <option value="120x120">120 x 120</option>
-            <option value="224x224">224 x 224</option>
-            <option value="299x299">299 x 299</option>
-            <option value="331x331">331 x 331</option>
-            <option value="512x512">512 x 512</option>
-          </Select>
-        </Flex>
-        <Flex
-          id="model-extension"
-          direction="column"
-          bg="black"
-          borderRadius="10px"
-          p="5"
-          width="100%"
-        >
-          <Text color="gray.700" fontWeight="500" fontSize="15pt">
-            Model Extension
-          </Text>
-          <Select
-            id="modelExtension"
-            onChange={handleSelection}
-            value={modelSettingsState.modelExtension}
-            iconColor="white"
-            sx={{
-              backgroundColor: "black",
-              textColor: "#805AD5",
-              fontWeight: "700",
-              fontSize: "20pt",
-              borderWidth: "0px",
-              paddingLeft: 0,
-            }}
-            isDisabled={loading}
-          >
-            {modelSettingsState.modelEnvironment === "tensorflow" && (
-              <>
-                <option value="h5">.h5</option>
-                <option value="tflite">.tflite</option>
-              </>
-            )}
-            {modelSettingsState.modelEnvironment === "keras" && (
-              <option value="h5">.h5</option>
-            )}
-            {modelSettingsState.modelEnvironment === "pytorch" && (
-              <>
-                <option value="pt">.pt</option>
-                <option value="pth">.pth</option>
-              </>
-            )}
-          </Select>
-        </Flex>
-        <Flex
-          id="model-environemt"
-          direction="column"
-          bg="black"
-          borderRadius="10px"
-          p="5"
-          width="100%"
-        >
-          <Flex align="center" gap="2">
             <Text color="gray.700" fontWeight="500" fontSize="15pt">
-              Model File
+              Model Environment
             </Text>
-            <Button
-              variant="outline"
-              colorScheme="blue"
-              size="xs"
-              onClick={() => {
-                if (modelInputRef.current) modelInputRef.current.click();
+            <Select
+              id="modelEnvironment"
+              onChange={handleSelection}
+              value={modelSettingsState.modelEnvironment}
+              iconColor="white"
+              sx={{
+                backgroundColor: "black",
+                textColor: "#D69E2E",
+                fontWeight: "700",
+                fontSize: "20pt",
+                borderWidth: "0px",
+                paddingLeft: 0,
               }}
               isDisabled={loading}
             >
-              Choose New Model
-            </Button>
+              <option value="tensorflow">TensorFlow</option>
+              <option value="pytorch">PyTorch</option>
+              <option value="keras">Keras</option>
+            </Select>
           </Flex>
-
-          <Text
-            color="pink.500"
-            fontWeight="700"
-            fontSize="20pt"
-            maxWidth="15em"
-            isTruncated
+          <Flex
+            id="input-imagesize"
+            direction="column"
+            bg="black"
+            borderRadius="10px"
+            p="5"
+            width="100%"
           >
-            <a
-              href={
-                modelSettingsState.modelPath
-                  ? modelSettingsState.modelPath
-                  : "https://apidon.com"
-              }
+            <Text color="gray.700" fontWeight="500" fontSize="15pt">
+              Input Image Sizes
+            </Text>
+            <Select
+              id="inputImageSizes"
+              onChange={handleSelection}
+              value={modelSettingsState.inputImageSizes}
+              iconColor="white"
+              sx={{
+                backgroundColor: "black",
+                textColor: "#00B5D8",
+                fontWeight: "700",
+                fontSize: "20pt",
+                borderWidth: "0px",
+                paddingLeft: 0,
+              }}
+              isDisabled={loading}
             >
-              {modelFileChoosen
-                ? modelFileChoosen.name
-                : modelSettingsState.modelPath}
-            </a>
-          </Text>
+              <option value="64x64">64 x 64</option>
+              <option value="120x120">120 x 120</option>
+              <option value="224x224">224 x 224</option>
+              <option value="299x299">299 x 299</option>
+              <option value="331x331">331 x 331</option>
+              <option value="512x512">512 x 512</option>
+            </Select>
+          </Flex>
+          <Flex
+            id="model-extension"
+            direction="column"
+            bg="black"
+            borderRadius="10px"
+            p="5"
+            width="100%"
+          >
+            <Text color="gray.700" fontWeight="500" fontSize="15pt">
+              Model Extension
+            </Text>
+            <Select
+              id="modelExtension"
+              onChange={handleSelection}
+              value={modelSettingsState.modelExtension}
+              iconColor="white"
+              sx={{
+                backgroundColor: "black",
+                textColor: "#805AD5",
+                fontWeight: "700",
+                fontSize: "20pt",
+                borderWidth: "0px",
+                paddingLeft: 0,
+              }}
+              isDisabled={loading}
+            >
+              {modelSettingsState.modelEnvironment === "tensorflow" && (
+                <>
+                  <option value="h5">.h5</option>
+                  <option value="tflite">.tflite</option>
+                </>
+              )}
+              {modelSettingsState.modelEnvironment === "keras" && (
+                <option value="h5">.h5</option>
+              )}
+              {modelSettingsState.modelEnvironment === "pytorch" && (
+                <>
+                  <option value="pt">.pt</option>
+                  <option value="pth">.pth</option>
+                </>
+              )}
+            </Select>
+          </Flex>
+          <Flex
+            id="model-environemt"
+            direction="column"
+            bg="black"
+            borderRadius="10px"
+            p="5"
+            width="100%"
+          >
+            <Flex align="center" gap="2">
+              <Text color="gray.700" fontWeight="500" fontSize="15pt">
+                Model File
+              </Text>
+              <Button
+                variant="outline"
+                colorScheme="blue"
+                size="xs"
+                onClick={() => {
+                  if (modelInputRef.current) modelInputRef.current.click();
+                }}
+                isDisabled={loading}
+              >
+                Choose New Model
+              </Button>
+            </Flex>
 
-          <Input
-            ref={modelInputRef}
-            onChange={handleModelFileChange}
-            type="file"
-            accept={`.${modelSettingsState.modelExtension}`}
-            hidden
-          />
+            <Text
+              color="pink.500"
+              fontWeight="700"
+              fontSize="20pt"
+              maxWidth="15em"
+              isTruncated
+            >
+              <a
+                href={
+                  modelSettingsState.modelPath
+                    ? modelSettingsState.modelPath
+                    : "https://apidon.com"
+                }
+              >
+                {modelFileChoosen
+                  ? modelFileChoosen.name
+                  : modelSettingsState.modelPath}
+              </a>
+            </Text>
+
+            <Input
+              ref={modelInputRef}
+              onChange={handleModelFileChange}
+              type="file"
+              accept={`.${modelSettingsState.modelExtension}`}
+              hidden
+            />
+          </Flex>
+        </Flex>
+        <Flex justify="center" align="center" gap="2">
+          <Button
+            variant="solid"
+            colorScheme="blue"
+            size="sm"
+            onClick={() => {
+              handleSaveChangesButton();
+            }}
+            isLoading={loading}
+            isDisabled={!differenceMade}
+          >
+            Continue to Billing
+          </Button>
+          <Button
+            variant="outline"
+            colorScheme="blue"
+            size="sm"
+            onClick={() => {
+              handleDiscardChangesButton();
+            }}
+            isDisabled={loading || !differenceMade}
+          >
+            Discard Changes
+          </Button>
         </Flex>
       </Flex>
-      <Flex justify="center" align="center" gap="2">
-        <Button
-          variant="solid"
-          colorScheme="blue"
-          size="sm"
-          onClick={() => {
-            handleSaveChangesButton();
-          }}
-          isLoading={loading}
-          isDisabled={!differenceMade}
-        >
-          Save Model Changes
-        </Button>
-        <Button
-          variant="outline"
-          colorScheme="blue"
-          size="sm"
-          onClick={() => {
-            handleDiscardChangesButton();
-          }}
-          isDisabled={loading || !differenceMade}
-        >
-          Discard Changes
-        </Button>
-      </Flex>
-    </Flex>
+    </>
   );
 }
