@@ -1,8 +1,19 @@
 import { billingModalStatusAtom } from "@/atoms/billingModalStatusAtom";
 import useBill from "@/hooks/billHooks/useBill";
-import { CalculateBillAPIReponse } from "@/types/Billing";
 import {
+  CalculateBillAPIReponse,
+  CheckPaymentRuleAPIResponse,
+  CreatePaymentRuleAPIRequestBody,
+} from "@/types/Billing";
+import {
+  Button,
   Flex,
+  FormControl,
+  FormLabel,
+  Icon,
+  Input,
+  InputGroup,
+  InputRightElement,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -12,23 +23,43 @@ import {
   Spinner,
   Text,
 } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { AiOutlineCheckCircle } from "react-icons/ai";
 import { useRecoilState } from "recoil";
 
-type Props = {};
+import { BiError } from "react-icons/bi";
+import { ethers } from "ethers";
 
-export default function BillingModal({}: Props) {
+export default function BillingModal() {
   const [billingModalState, setBillingModalState] = useRecoilState(
     billingModalStatusAtom
   );
 
-  const { checkPaymentRuleStatus, calculateBill } = useBill();
+  const { checkPaymentRuleStatus, calculateBill, createPaymentRule } =
+    useBill();
 
   const [initialLoadingStatus, setInitialLoadingStatus] = useState(true);
 
   const [calculatedBill, setCalculatedBill] = useState<CalculateBillAPIReponse>(
-    { postCount: 0, amount: 0, currency: "dollar", pricePerPost: 0 }
+    { postCount: 0, totalPrice: 0, currency: "dollar", pricePerPost: 0 }
   );
+
+  const [paymentRuleStatusState, setPaymentRuleStatusState] =
+    useState<CheckPaymentRuleAPIResponse>({
+      occured: false,
+      thereIsNoActivePaymentRule: true,
+    });
+
+  const [createPaymentInputState, setCreatePaymentInputState] =
+    useState<CreatePaymentRuleAPIRequestBody>({
+      payerAddress: "",
+    });
+
+  const [payerAddressRight, setPayerAddressRight] = useState(true);
+  const payerAddressInputRef = useRef<HTMLInputElement>(null);
+
+  const [createPaymentRuleLoading, setCreatePaymentRuleLoading] =
+    useState(false);
 
   /**
    * 1-) Calculate Billing and show "Proceed" button.
@@ -92,6 +123,8 @@ export default function BillingModal({}: Props) {
       return setInitialLoadingStatus(true); // Yeah it will stay true, because it is not expected..... // Or we can show error to user.
     }
 
+    setPaymentRuleStatusState(operationResult);
+
     if (operationResult.thereIsNoActivePaymentRule) {
       // Calculate Bill
 
@@ -124,6 +157,60 @@ export default function BillingModal({}: Props) {
     return operationResult;
   };
 
+  const handlePayerAddressChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const addressInput = event.target.value;
+
+    if (addressInput.length === 0) {
+      // prevent bad ui
+      setPayerAddressRight(true);
+      setCreatePaymentInputState({
+        payerAddress: addressInput,
+      });
+      return;
+    }
+
+    const addressValidationResult = ethers.isAddress(addressInput);
+    setPayerAddressRight(addressValidationResult);
+
+    if (addressValidationResult) {
+      if (payerAddressInputRef.current) {
+        payerAddressInputRef.current.blur();
+      }
+    }
+    if (addressValidationResult && !addressInput.startsWith("0x")) {
+      setCreatePaymentInputState({
+        payerAddress: `0x${addressInput}`,
+      });
+      return;
+    }
+    setCreatePaymentInputState({
+      payerAddress: addressInput,
+    });
+  };
+
+  const handleCreatePaymentButton = async () => {
+    // Turn on the spinner
+    setCreatePaymentRuleLoading(true);
+
+    const operationResult = await createPaymentRule(createPaymentInputState);
+
+    if (!operationResult) {
+      // There was an error while creating payment rule.
+      // I didn't decide to show the user error or not.
+      // So, I leave the spinner on for now.
+      return;
+    }
+
+    // Automatically switch to payment waiting window or verifying.
+
+    console.log(operationResult);
+
+    // Turn off the spinner
+    return setCreatePaymentRuleLoading(false);
+  };
+
   return (
     <Modal
       id="billing_modal"
@@ -144,7 +231,7 @@ export default function BillingModal({}: Props) {
         bg="black"
         minHeight={{
           md: "500px",
-          large: "500px",
+          lg: "500px",
         }}
       >
         <ModalHeader color="white">Billing Panel</ModalHeader>
@@ -154,13 +241,17 @@ export default function BillingModal({}: Props) {
             <>
               <Spinner color="gray.500" width="50pt" height="50pt" />
             </>
-          ) : (
+          ) : paymentRuleStatusState.thereIsNoActivePaymentRule ? (
             <>
-              <Flex direction="column" gap="5px">
-                <Text color="white" fontSize="15pt" fontWeight="700">
-                  Your Receipt
-                </Text>
+              <Flex
+                direction="column"
+                gap="10px"
+                id="there-is-no-active-payment-rule-flex"
+              >
                 <Flex id="receipt-content" direction="column">
+                  <Text color="white" fontSize="15pt" fontWeight="700">
+                    Your Receipt
+                  </Text>
                   <Flex id="post-count" align="center" gap="5px">
                     <Text color="gray.500" fontSize="10pt" fontWeight="600">
                       Post Count:
@@ -182,7 +273,7 @@ export default function BillingModal({}: Props) {
                       Total:
                     </Text>
                     <Text color="gray.100" fontSize="10pt" fontWeight="700">
-                      {calculatedBill.amount}
+                      {calculatedBill.totalPrice}
                     </Text>
                   </Flex>
                   <Flex id="currency" align="center" gap="5px">
@@ -192,6 +283,84 @@ export default function BillingModal({}: Props) {
                     <Text color="white">{calculatedBill.currency}</Text>
                   </Flex>
                 </Flex>
+
+                <Flex id="create-payment-part" direction="column">
+                  <Text color="white" fontSize="15pt" fontWeight="700">
+                    Payment Rule Creation
+                  </Text>
+                  <Flex id="wallet-address-part" direction="column" gap="10px">
+                    <Text color="yellow.600" fontSize="8pt" fontWeight="600">
+                      Plesae provide a "payer" address. Note that, you can only
+                      make payment with the address you will provide.
+                    </Text>
+                    <InputGroup>
+                      <FormControl variant="floating">
+                        <Input
+                          fontSize="10pt"
+                          required
+                          name="payer-address"
+                          placeholder=" "
+                          mb={2}
+                          pr={"9"}
+                          onChange={handlePayerAddressChange}
+                          value={createPaymentInputState.payerAddress}
+                          _hover={{
+                            border: "1px solid",
+                            borderColor: "blue.500",
+                          }}
+                          textColor="white"
+                          bg="black"
+                          spellCheck={false}
+                          isRequired
+                        />
+                        <FormLabel
+                          bg="rgba(0,0,0)"
+                          textColor="gray.500"
+                          fontSize="12pt"
+                          my={2}
+                        >
+                          Payer Address
+                        </FormLabel>
+                      </FormControl>
+                      <InputRightElement
+                        hidden={
+                          createPaymentInputState.payerAddress.length === 0
+                        }
+                      >
+                        {!payerAddressRight ? (
+                          <Icon as={BiError} fontSize="20px" color="red" />
+                        ) : (
+                          <Icon
+                            as={AiOutlineCheckCircle}
+                            fontSize="20px"
+                            color="green"
+                          />
+                        )}
+                      </InputRightElement>
+                    </InputGroup>
+                  </Flex>
+                  <Flex id="button" align="center" justify="center">
+                    <Button
+                      variant="outline"
+                      colorScheme="blue"
+                      size="sm"
+                      isLoading={createPaymentRuleLoading}
+                      onClick={() => {
+                        handleCreatePaymentButton();
+                      }}
+                    >
+                      Create Payment
+                    </Button>
+                  </Flex>
+                </Flex>
+              </Flex>
+            </>
+          ) : (
+            <>
+              <Flex id="there-is-active-payment-rule-flex">
+                <Text color="white" fontSize="15pt" fontWeight="700">
+                  Verifying Your Payment...
+                </Text>
               </Flex>
             </>
           )}

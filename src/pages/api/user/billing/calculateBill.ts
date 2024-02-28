@@ -7,10 +7,34 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { authorization } = req.headers;
+  /**
+   * To handle cors policy...
+   */
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    process.env.NEXT_PUBLIC_ALLOW_CORS_ADDRESS as string
+  );
+  res.setHeader("Access-Control-Allow-Headers", "authorization,AKBAPA");
 
-  const operationFromUsername = await getDisplayName(authorization as string);
-  if (!operationFromUsername) return res.status(401).send("unauthorized");
+  // Handle preflight OPTIONS request
+  if (req.method === "OPTIONS") {
+    // Respond with a 200 OK status code
+    res.status(200).end();
+    return;
+  }
+
+  const { authorization } = req.headers;
+  const { akbapa } = req.headers;
+
+  if (akbapa) {
+    if (akbapa !== process.env.API_KEY_BETWEEN_APIDON_PROVIDER_APIS)
+      return res
+        .status(401)
+        .send("Key between apidon provider API's is false.");
+  } else {
+    const operationFromUsername = await getDisplayName(authorization as string);
+    if (!operationFromUsername) return res.status(401).send("unauthorized");
+  }
 
   let postsLength: number;
   try {
@@ -22,14 +46,14 @@ export default async function handler(
     console.error("Error while calculating bill: \n", error);
     return res.status(500).send("Internal Server Error");
   }
-  const pricePerPost = 5
-  const amount = postsLength * pricePerPost;
+  const pricePerPost = 5;
+  const totalPrice = postsLength * pricePerPost;
 
   const response: CalculateBillAPIReponse = {
-    amount: amount,
+    totalPrice: totalPrice,
     currency: "dollar",
     postCount: postsLength,
-    pricePerPost : pricePerPost
+    pricePerPost: pricePerPost,
   };
 
   return res.status(200).json(response);

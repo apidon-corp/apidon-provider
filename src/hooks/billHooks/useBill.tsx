@@ -4,6 +4,8 @@ import {
   CalculateBillAPIReponse,
   CheckPaymentRuleAPIRequestBody,
   CheckPaymentRuleAPIResponse,
+  CreatePaymentRuleAPIRequestBody,
+  CreatePaymentRuleAPIResponse,
 } from "@/types/Billing";
 import { useRecoilValue } from "recoil";
 
@@ -74,5 +76,41 @@ export default function useBill() {
     }
   };
 
-  return { checkPaymentRuleStatus, calculateBill };
+  const createPaymentRule = async (
+    paymentRuleInput: CreatePaymentRuleAPIRequestBody
+  ) => {
+    try {
+      if (!auth.currentUser) throw new Error("No current user");
+      const idToken = await auth.currentUser.getIdToken();
+
+      const body: CreatePaymentRuleAPIRequestBody = { ...paymentRuleInput };
+      const response = await fetch("/api/user/billing/createPaymentRule", {
+        headers: {
+          authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({ ...body }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Response from 'createPaymentRule is not okey: \n' ${await response.text()}`
+        );
+      }
+
+      const goodResponse =
+        (await response.json()) as CreatePaymentRuleAPIResponse;
+
+      return goodResponse;
+    } catch (error) {
+      console.error(
+        "Error on useBill hook and on createPaymentRule function: \n",
+        error
+      );
+      return false;
+    }
+  };
+
+  return { checkPaymentRuleStatus, calculateBill, createPaymentRule };
 }
