@@ -9,6 +9,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Spinner,
   Text,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
@@ -26,10 +27,7 @@ export default function BillingModal({}: Props) {
   const [initialLoadingStatus, setInitialLoadingStatus] = useState(true);
 
   const [calculatedBill, setCalculatedBill] = useState<CalculateBillAPIReponse>(
-    {
-      amount: 0,
-      currency: "dollar",
-    }
+    { postCount: 0, amount: 0, currency: "dollar", pricePerPost: 0 }
   );
 
   /**
@@ -142,18 +140,61 @@ export default function BillingModal({}: Props) {
       autoFocus={false}
     >
       <ModalOverlay backdropFilter="auto" backdropBlur="5px" />
-      <ModalContent bg="black">
+      <ModalContent
+        bg="black"
+        minHeight={{
+          md: "500px",
+          large: "500px",
+        }}
+      >
         <ModalHeader color="white">Billing Panel</ModalHeader>
         <ModalCloseButton color="white" />
         <ModalBody>
-          <Flex>
-            <Text color="white" fontSize="10pt">
-              Your Receipt
-            </Text>
-            <Text color="white" fontSize="10pt">
-              $100
-            </Text>
-          </Flex>
+          {initialLoadingStatus ? (
+            <>
+              <Spinner color="gray.500" width="50pt" height="50pt" />
+            </>
+          ) : (
+            <>
+              <Flex direction="column" gap="5px">
+                <Text color="white" fontSize="15pt" fontWeight="700">
+                  Your Receipt
+                </Text>
+                <Flex id="receipt-content" direction="column">
+                  <Flex id="post-count" align="center" gap="5px">
+                    <Text color="gray.500" fontSize="10pt" fontWeight="600">
+                      Post Count:
+                    </Text>
+                    <Text color="gray.100" fontSize="10pt" fontWeight="700">
+                      {calculatedBill.postCount}
+                    </Text>
+                  </Flex>
+                  <Flex id="price-per-post" align="center" gap="5px">
+                    <Text color="gray.500" fontSize="10pt" fontWeight="600">
+                      Price Per Post:
+                    </Text>
+                    <Text color="gray.100" fontSize="10pt" fontWeight="700">
+                      {calculatedBill.pricePerPost}
+                    </Text>
+                  </Flex>
+                  <Flex id="total-amount" align="center" gap="5px">
+                    <Text color="gray.500" fontSize="10pt" fontWeight="600">
+                      Total:
+                    </Text>
+                    <Text color="gray.100" fontSize="10pt" fontWeight="700">
+                      {calculatedBill.amount}
+                    </Text>
+                  </Flex>
+                  <Flex id="currency" align="center" gap="5px">
+                    <Text color="gray.500" fontSize="10pt" fontWeight="600">
+                      Currency:
+                    </Text>
+                    <Text color="white">{calculatedBill.currency}</Text>
+                  </Flex>
+                </Flex>
+              </Flex>
+            </>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>

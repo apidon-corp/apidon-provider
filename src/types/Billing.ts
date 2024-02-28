@@ -17,6 +17,8 @@ export type CheckPaymentRuleAPIResponse = {
 };
 
 export type CalculateBillAPIReponse = {
+  postCount: number;
+  pricePerPost: number;
   amount: number;
   currency: "dollar" | "matic" | "turkish_lira";
 };

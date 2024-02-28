@@ -22,12 +22,14 @@ export default async function handler(
     console.error("Error while calculating bill: \n", error);
     return res.status(500).send("Internal Server Error");
   }
-
-  const amount = postsLength * 1;
+  const pricePerPost = 5
+  const amount = postsLength * pricePerPost;
 
   const response: CalculateBillAPIReponse = {
     amount: amount,
     currency: "dollar",
+    postCount: postsLength,
+    pricePerPost : pricePerPost
   };
 
   return res.status(200).json(response);
