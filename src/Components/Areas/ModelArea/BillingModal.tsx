@@ -38,8 +38,6 @@ export default function BillingModal() {
   const { checkPaymentRuleStatus, calculateBill, createPaymentRule } =
     useBill();
 
-  const [initialLoadingStatus, setInitialLoadingStatus] = useState(true);
-
   const [calculatedBill, setCalculatedBill] = useState<CalculateBillAPIReponse>(
     { postCount: 0, totalPrice: 0, currency: "dollar", pricePerPost: 0 }
   );
@@ -60,6 +58,10 @@ export default function BillingModal() {
 
   const [createPaymentRuleLoading, setCreatePaymentRuleLoading] =
     useState(false);
+
+  const [billingModalViewState, setBillingModalViewState] = useState<
+    "initialLoading" | "calculateBill" | "verifyingPayment" | "paymentVerified"
+  >("initialLoading");
 
   /**
    * 1-) Calculate Billing and show "Proceed" button.
@@ -102,17 +104,19 @@ export default function BillingModal() {
    */
 
   useEffect(() => {
-    if (!billingModalState.isOpen) return;
     checkInitialStatus();
   }, [billingModalState.isOpen]);
 
   useEffect(() => {
-    if (!billingModalState.isOpen) return;
-    console.log(calculatedBill);
-  }, [calculatedBill]);
+    if (
+      billingModalViewState === "verifyingPayment" ||
+      billingModalViewState === "paymentVerified"
+    )
+      setBillingModalState({ isOpen: true });
+  }, [billingModalViewState]);
 
   const checkInitialStatus = async () => {
-    setInitialLoadingStatus(true);
+    setBillingModalViewState("initialLoading");
 
     const operationResult = await checkPaymentRuleStatus();
 
@@ -120,35 +124,35 @@ export default function BillingModal() {
       console.log(
         "Operation result is good from 'checkPaymentRuleStatus' hook."
       );
-      return setInitialLoadingStatus(true); // Yeah it will stay true, because it is not expected..... // Or we can show error to user.
+      return;
     }
 
     setPaymentRuleStatusState(operationResult);
 
     if (operationResult.thereIsNoActivePaymentRule) {
       // Calculate Bill
-
       const calculatedBillResult = await handleCalculateBill();
 
       if (!calculatedBillResult) {
         console.log(
           "Calculate bill result is false from 'calculateBill' hook."
         );
-        return setInitialLoadingStatus(true);
+        return setBillingModalViewState("initialLoading");
       }
 
       setCalculatedBill(calculatedBillResult);
-      return setInitialLoadingStatus(false);
+
+      return setBillingModalViewState("calculateBill");
     }
 
     if (!operationResult.occured) {
       // Show Status of Payment Rule
-      return;
+      return setBillingModalViewState("verifyingPayment");
     }
 
     if (operationResult.occured) {
-      // Show status of payment rule and show 'finish model changes!' button.
-      return;
+      // Show status of payment rule and show 'finish model changes!' button. and we convert active field to false.
+      return setBillingModalViewState("paymentVerified");
     }
   };
 
@@ -237,11 +241,13 @@ export default function BillingModal() {
         <ModalHeader color="white">Billing Panel</ModalHeader>
         <ModalCloseButton color="white" />
         <ModalBody>
-          {initialLoadingStatus ? (
+          {billingModalViewState === "initialLoading" && (
             <>
               <Spinner color="gray.500" width="50pt" height="50pt" />
             </>
-          ) : paymentRuleStatusState.thereIsNoActivePaymentRule ? (
+          )}
+
+          {billingModalViewState === "calculateBill" && (
             <>
               <Flex
                 direction="column"
@@ -355,11 +361,23 @@ export default function BillingModal() {
                 </Flex>
               </Flex>
             </>
-          ) : (
+          )}
+
+          {billingModalViewState === "verifyingPayment" && (
             <>
               <Flex id="there-is-active-payment-rule-flex">
                 <Text color="white" fontSize="15pt" fontWeight="700">
-                  Verifying Your Payment...
+                  Waiting for your payment...
+                </Text>
+              </Flex>
+            </>
+          )}
+
+          {billingModalViewState === "paymentVerified" && (
+            <>
+              <Flex id="there-is-active-payment-rule-flex">
+                <Text color="white" fontSize="15pt" fontWeight="700">
+                  Payment Verified
                 </Text>
               </Flex>
             </>
