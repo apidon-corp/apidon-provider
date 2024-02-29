@@ -131,6 +131,13 @@ export default function BillingModal() {
     if (billingModalViewState === "initialLoading") checkInitialStatus();
   }, [billingModalViewState]);
 
+  useEffect(() => {
+    if (billingModalViewState !== "verifyingPayment") return;
+    const seconds = 1000;
+    const interval = setInterval(handleCheckPaymentStatus, 10 * seconds);
+    return () => clearInterval(interval);
+  }, [billingModalViewState]);
+
   const checkInitialStatus = async () => {
     setBillingModalViewState("initialLoading");
 
@@ -257,6 +264,30 @@ export default function BillingModal() {
     setBillingModalViewState("initialLoading");
   };
 
+  const handleCheckPaymentStatus = async () => {
+    const operationResult = await checkPaymentRuleStatus();
+
+    if (!operationResult) {
+      return false;
+    }
+
+    if (
+      operationResult.thereIsNoActivePaymentRule ||
+      !operationResult.activePaymentRuleData
+    )
+      return false;
+
+    console.log(
+      "Occured Status:  ",
+      operationResult.activePaymentRuleData.occured
+    );
+
+    if (operationResult.activePaymentRuleData.occured)
+      setBillingModalViewState("initialLoading");
+
+    return operationResult.activePaymentRuleData.occured;
+  };
+
   return (
     <Modal
       id="billing_modal"
@@ -327,11 +358,11 @@ export default function BillingModal() {
                 </Flex>
               </Flex>
 
-              <Flex id="create-payment-part" direction="column">
+              <Flex id="create-payment-part" direction="column" gap="5px">
                 <Text color="white" fontSize="15pt" fontWeight="700">
                   Payment Rule Creation
                 </Text>
-                <Flex id="wallet-address-part" direction="column" gap="10px">
+                <Flex id="payer-address-part" direction="column" gap="15px">
                   <Text color="yellow.600" fontSize="8pt" fontWeight="600">
                     Plesae provide a "payer" address. Note that, you can only
                     make payment with the address you will provide.
@@ -352,12 +383,12 @@ export default function BillingModal() {
                           borderColor: "blue.500",
                         }}
                         textColor="white"
-                        bg="black"
+                        bg="#1A1A1A"
                         spellCheck={false}
                         isRequired
                       />
                       <FormLabel
-                        bg="rgba(0,0,0)"
+                        bg="#1A1A1A"
                         textColor="gray.500"
                         fontSize="12pt"
                         my={2}
@@ -389,6 +420,7 @@ export default function BillingModal() {
                     onClick={() => {
                       handleCreatePaymentButton();
                     }}
+                    isDisabled={!payerAddressRight}
                   >
                     Create Payment
                   </Button>
@@ -439,7 +471,7 @@ export default function BillingModal() {
                     Due Date:
                   </Text>
                   <Text color="gray.100" fontSize="9pt" fontWeight="700">
-                    {createdPaymentRuleState.due}
+                    {new Date(createdPaymentRuleState.due).toLocaleString()}
                   </Text>
                 </Flex>
 
