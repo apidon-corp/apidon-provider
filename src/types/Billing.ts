@@ -12,7 +12,13 @@ export type CheckPaymentRuleAPIRequestBody = {
 };
 
 export type CheckPaymentRuleAPIResponse = {
-  occured: boolean;
+  activePaymentRuleData?: {
+    price: number;
+    due: number;
+    id: string;
+    occured: boolean;
+    payer: string;
+  };
   thereIsNoActivePaymentRule: boolean;
 };
 

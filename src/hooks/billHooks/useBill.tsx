@@ -112,5 +112,28 @@ export default function useBill() {
     }
   };
 
-  return { checkPaymentRuleStatus, calculateBill, createPaymentRule };
+  const cancelBill = async () => {
+    try {
+      if (!auth.currentUser) throw new Error("No current user.");
+      const idToken = await auth.currentUser.getIdToken();
+
+      const response = await fetch("/api/user/billing/cancelBill", {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${idToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Response from 'cancelBill' API is not okay: \n ${await response.text()}`
+        );
+      }
+      return true;
+    } catch (error) {
+      console.error("Error on fetching to 'cancelBill' API: \n", error);
+      return false;
+    }
+  };
+
+  return { checkPaymentRuleStatus, calculateBill, createPaymentRule, cancelBill };
 }

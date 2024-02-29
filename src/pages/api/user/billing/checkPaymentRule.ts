@@ -35,7 +35,6 @@ export default async function handler(
 
   if (activeBillDocCollection.empty) {
     response = {
-      occured: false,
       thereIsNoActivePaymentRule: true,
     };
     return res.status(200).json(response);
@@ -50,10 +49,20 @@ export default async function handler(
     activeBillDocCollection.docs[0].data() as PaymentRuleInServer;
 
   const occured = activeBillDocData.occured;
+  const id = activeBillDocData.id;
+  const price = activeBillDocData.price;
+  const due = activeBillDocData.due;
+  const payer = activeBillDocData.payer;
 
   response = {
-    occured: occured,
     thereIsNoActivePaymentRule: false,
+    activePaymentRuleData: {
+      due: due,
+      id: id,
+      occured: occured,
+      payer: payer,
+      price: price,
+    },
   };
 
   return res.status(200).json(response);

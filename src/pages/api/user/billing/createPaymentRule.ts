@@ -29,6 +29,26 @@ export default async function handler(
     return res.status(422).send("Payer Address is not a payable address.");
 
   /**
+   * Check If there is an already active bill doc.
+   */
+
+  let activeBillDocCollection;
+  try {
+    activeBillDocCollection = await firestore
+      .collection(`users/${operationFromUsername}/bills`)
+      .where("active", "==", true)
+      .get();
+    if (!activeBillDocCollection.empty)
+      throw new Error("There is already an active bill doc.");
+  } catch (error) {
+    console.error(
+      "Error on checking active bill doc count before creating new bill doc: \n",
+      error
+    );
+    return res.status(500).send("Internal Server Error");
+  }
+
+  /**
    * Calculate again the price...
    * Create Document... and get its Id
    * Firebase
