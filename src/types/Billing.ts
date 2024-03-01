@@ -5,6 +5,7 @@ export type PaymentRuleInServer = {
   id: string;
   occured: boolean;
   payer: string;
+  integrationStarted: boolean;
 };
 
 export type CheckPaymentRuleAPIRequestBody = {
@@ -18,6 +19,7 @@ export type CheckPaymentRuleAPIResponse = {
     id: string;
     occured: boolean;
     payer: string;
+    integrationStarted: boolean;
   };
   thereIsNoActivePaymentRule: boolean;
 };
@@ -40,4 +42,5 @@ export type CreatePaymentRuleAPIResponse = {
   id: string;
   occured: boolean;
   payer: string;
+  integrationStarted: boolean;
 };

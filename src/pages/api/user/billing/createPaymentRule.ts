@@ -91,6 +91,7 @@ export default async function handler(
     id: "",
     occured: false,
     payer: payerAddress,
+    integrationStarted: false,
   };
 
   let createdDocRef;

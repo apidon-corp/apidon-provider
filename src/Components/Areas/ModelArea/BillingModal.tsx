@@ -78,9 +78,8 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
       occured: false,
       payer: "",
       price: 0,
+      integrationStarted: false,
     });
-
-  const [modelIntegrationLoading, setModelIntegrationLoading] = useState(false);
 
   useEffect(() => {
     checkInitialStatus();
@@ -144,6 +143,8 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
       occured: operationResult.activePaymentRuleData.occured,
       payer: operationResult.activePaymentRuleData.payer,
       price: operationResult.activePaymentRuleData.price,
+      integrationStarted:
+        operationResult.activePaymentRuleData.integrationStarted,
     });
 
     if (!operationResult.activePaymentRuleData.occured) {
@@ -152,7 +153,10 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
 
     if (operationResult.activePaymentRuleData.occured) {
       // Show status of payment rule and show 'finish model changes!' button. and we convert active field to false.
-      return setBillingModalViewState("paymentVerified");
+      if (!operationResult.activePaymentRuleData.integrationStarted)
+        return setBillingModalViewState("paymentVerified");
+      if (operationResult.activePaymentRuleData.integrationStarted)
+        return setBillingModalViewState("modelIntegrating");
     }
   };
 
@@ -257,6 +261,14 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
 
   const handleIntegrateModelButton = async () => {
     setBillingModalViewState("modelIntegrating");
+    console.log("Integration started from -billingmodal");
+    await handleIntegrateModel();
+    console.log("Integration finished from -billingmodal");
+
+    setBillingModalViewState("initialLoading");
+    setBillingModalState({
+      isOpen: false,
+    });
   };
 
   return (
@@ -568,7 +580,7 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
                 Integrating Model
               </Text>
 
-              <Flex
+              {/* <Flex
                 id="model-integration-detail"
                 direction="column"
                 align="center"
@@ -615,7 +627,7 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
                   <Icon fontSize="12pt" as={AiOutlineCheckCircle} />
                   <Text fontSize="9pt">Analyzing Platform Data</Text>
                 </Flex>
-              </Flex>
+              </Flex> */}
             </Flex>
           )}
         </ModalBody>

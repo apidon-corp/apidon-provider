@@ -53,6 +53,7 @@ export default async function handler(
   const price = activeBillDocData.price;
   const due = activeBillDocData.due;
   const payer = activeBillDocData.payer;
+  const integrationStarted = activeBillDocData.integrationStarted;
 
   response = {
     thereIsNoActivePaymentRule: false,
@@ -62,6 +63,7 @@ export default async function handler(
       occured: occured,
       payer: payer,
       price: price,
+      integrationStarted: integrationStarted,
     },
   };
 

@@ -93,15 +93,6 @@ export default function AlgorithmArea() {
   };
 
   const handleIntegrateModelButton = async () => {
-    console.log("Handle Integrate Button Called!");
-
-    const modelFileChoosenLocal = modelFileChoosen;
-    const modelSettingsStateLocal = modelSettingsState;
-
-    console.log("Model File Choosen: ", modelFileChoosenLocal);
-    console.log("Model Settings State Local: ", modelSettingsStateLocal);
-
-    /**
     setLoading(true);
 
     let newModelPath = "";
@@ -144,7 +135,6 @@ export default function AlgorithmArea() {
     }
 
     setLoading(false);
-     */
   };
 
   const handleDiscardChangesButton = async () => {
