@@ -30,7 +30,11 @@ import { useRecoilState } from "recoil";
 import { ethers } from "ethers";
 import { BiError } from "react-icons/bi";
 
-export default function BillingModal() {
+type Props = {
+  handleIntegrateModel: () => Promise<void>;
+};
+
+export default function BillingModal({ handleIntegrateModel }: Props) {
   const [billingModalState, setBillingModalState] = useRecoilState(
     billingModalStatusAtom
   );
@@ -63,6 +67,7 @@ export default function BillingModal() {
     | "verifyingPayment"
     | "paymentVerified"
     | "paymentCancelling"
+    | "modelIntegrating"
   >("initialLoading");
 
   const [createdPaymentRuleState, setCreatedPaymentRuleState] =
@@ -75,45 +80,7 @@ export default function BillingModal() {
       price: 0,
     });
 
-  /**
-   * 1-) Calculate Billing and show "Proceed" button.
-   * 2-) If provider press "proceed" button get input of its "walletAddress" and show "Create Payment Rule"
-   * 3-) If provider press create payment rule, create payment rule...
-   * 4-) Show user current status of payment rule and "cancel" buttons....
-   * 5-) If user presses "cancel" button update "Payment Rule Object's active field to false.
-   * 5-) When payment verified, show "upload model now!" button to provider.
-   * 6-) Upload Model...
-   */
-
-  /**
-   * 1-) Check at start If there is already active payment rule. (check active status of docs...)
-   *  1.1-) If there is show "pay" and "cancel" button.
-   *  1.2-) If not, calculate billing and ask.
-   */
-
-  /**
-   * 1-) One provider can only have just one active payment rule at the same time.
-   */
-
-  /** Payment Rule Object in Database
-   * active : boolean,
-   * amount : number,
-   * due : number,
-   * id : string, (this will be created [providerId]-[documentId])
-   * occured : boolean, (If payment was sucessfull)
-   * receipent : string (wallet address)
-   */
-
-  /**
-   * Payment rule object will be stored in `/users/[providerId]/bills/[documentId](auto-generated)`.
-   */
-
-  /** API's that will be needed:
-   * 1-) Create Payment Rule
-   * 2-) Check Payment Rule Status
-   * 3-) Cancel Payment Rule
-   * 4-= Calculate Bill
-   */
+  const [modelIntegrationLoading, setModelIntegrationLoading] = useState(false);
 
   useEffect(() => {
     checkInitialStatus();
@@ -288,6 +255,10 @@ export default function BillingModal() {
     return operationResult.activePaymentRuleData.occured;
   };
 
+  const handleIntegrateModelButton = async () => {
+    setBillingModalViewState("modelIntegrating");
+  };
+
   return (
     <Modal
       id="billing_modal"
@@ -299,6 +270,12 @@ export default function BillingModal() {
       }}
       isOpen={billingModalState.isOpen}
       onClose={() => {
+        if (
+          billingModalViewState === "paymentCancelling" ||
+          billingModalViewState === "verifyingPayment" ||
+          billingModalViewState === "paymentVerified"
+        )
+          return;
         setBillingModalState({ isOpen: false });
       }}
       autoFocus={false}
@@ -312,7 +289,14 @@ export default function BillingModal() {
         }}
       >
         <ModalHeader color="white">Billing Panel</ModalHeader>
-        <ModalCloseButton color="white" />
+        <ModalCloseButton
+          color="white"
+          hidden={
+            billingModalViewState === "paymentCancelling" ||
+            billingModalViewState === "verifyingPayment" ||
+            billingModalViewState === "paymentVerified"
+          }
+        />
         <ModalBody display="flex">
           {billingModalViewState === "initialLoading" && (
             <>
@@ -516,10 +500,122 @@ export default function BillingModal() {
           )}
 
           {billingModalViewState === "paymentVerified" && (
-            <Flex id="paymentVerified-flex">
+            <Flex id="paymentVerified-flex" direction="column" gap="10px">
               <Text color="white" fontSize="15pt" fontWeight="700">
-                Payment Verified
+                Integrate Model
               </Text>
+
+              <Text color="green.500" fontSize="10pt" fontWeight="600">
+                Your payment is successfully occurred.
+              </Text>
+              <Text color="yellow.600" fontSize="9pt" fontWeight="600">
+                Once your model is integrated into the Apidon platform, it is
+                disconnected from the outside world. In this way, even the
+                developers of your model cannot access the data of the users.
+              </Text>
+
+              <Text color="yellow.600" fontSize="9pt" fontWeight="600">
+                It is important that your model does not infringe legal rights
+                such as copyright, patents or trade secrets.
+              </Text>
+
+              <Text color="yellow.600" fontSize="9pt" fontWeight="600">
+                The evaluation process of your model can take between 1-2 weeks.
+              </Text>
+
+              <Text color="yellow.600" fontSize="9pt" fontWeight="600">
+                You can remove your model from the platform at any time.
+              </Text>
+
+              <Text color="yellow.600" fontSize="9pt" fontWeight="600">
+                Uploading a model to the Apidon platform means that you agree
+                that your model meets all the criteria mentioned above. Apidon
+                cannot be held responsible for any data breach, ethical
+                violation or legal violation caused by your model.
+              </Text>
+              <Flex
+                id="integrate-your-model-button"
+                width="100%"
+                align="center"
+                justify="center"
+                mt={5}
+              >
+                <Button
+                  variant="solid"
+                  colorScheme="green"
+                  size="md"
+                  onClick={() => {
+                    handleIntegrateModelButton();
+                  }}
+                >
+                  Integrate Your Model
+                </Button>
+              </Flex>
+            </Flex>
+          )}
+
+          {billingModalViewState == "modelIntegrating" && (
+            <Flex
+              id="model-integrating-flex"
+              direction="column"
+              gap="20px"
+              width="100%"
+              align="center"
+              justify="center"
+            >
+              <Spinner color="green" width="50pt" height="50pt" />
+              <Text color="white" fontSize="15pt" fontWeight="700">
+                Integrating Model
+              </Text>
+
+              <Flex
+                id="model-integration-detail"
+                direction="column"
+                align="center"
+                justify="center"
+                gap="5px"
+              >
+                <Flex
+                  id="model-uploading-firebase-detail"
+                  gap="5px"
+                  align="center"
+                  justify="center"
+                  color="yellow.500"
+                >
+                  <Icon fontSize="12pt" as={AiOutlineCheckCircle} />
+                  <Text fontSize="9pt">Model Uploading</Text>
+                </Flex>
+                <Flex
+                  id="model-settings-upload-firebase-detail"
+                  gap="5px"
+                  align="center"
+                  justify="center"
+                  color="gray.500"
+                >
+                  <Icon fontSize="12pt" as={AiOutlineCheckCircle} />
+                  <Text fontSize="9pt">Model Settings Uploading</Text>
+                </Flex>
+                <Flex
+                  id="connecting-with-apis"
+                  gap="5px"
+                  align="center"
+                  justify="center"
+                  color="gray.500"
+                >
+                  <Icon fontSize="12pt" as={AiOutlineCheckCircle} />
+                  <Text fontSize="9pt">Connecting with APIs</Text>
+                </Flex>
+                <Flex
+                  id=""
+                  gap="5px"
+                  align="center"
+                  justify="center"
+                  color="gray.500"
+                >
+                  <Icon fontSize="12pt" as={AiOutlineCheckCircle} />
+                  <Text fontSize="9pt">Analyzing Platform Data</Text>
+                </Flex>
+              </Flex>
             </Flex>
           )}
         </ModalBody>

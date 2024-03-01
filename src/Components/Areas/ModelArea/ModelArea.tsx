@@ -88,8 +88,18 @@ export default function AlgorithmArea() {
     }
   };
 
-  const handleSaveChangesButton = async () => {
+  const handleContinueBillingButton = async () => {
     setBillingModalState({ isOpen: true });
+  };
+
+  const handleIntegrateModelButton = async () => {
+    console.log("Handle Integrate Button Called!");
+
+    const modelFileChoosenLocal = modelFileChoosen;
+    const modelSettingsStateLocal = modelSettingsState;
+
+    console.log("Model File Choosen: ", modelFileChoosenLocal);
+    console.log("Model Settings State Local: ", modelSettingsStateLocal);
 
     /**
     setLoading(true);
@@ -134,8 +144,7 @@ export default function AlgorithmArea() {
     }
 
     setLoading(false);
-
-    */
+     */
   };
 
   const handleDiscardChangesButton = async () => {
@@ -188,7 +197,7 @@ export default function AlgorithmArea() {
 
   return (
     <>
-      <BillingModal />
+      <BillingModal handleIntegrateModel={handleIntegrateModelButton} />
       <Flex
         id="algorithm-area"
         direction="column"
@@ -372,7 +381,7 @@ export default function AlgorithmArea() {
             colorScheme="blue"
             size="sm"
             onClick={() => {
-              handleSaveChangesButton();
+              handleContinueBillingButton();
             }}
             isLoading={loading}
             isDisabled={!differenceMade}
