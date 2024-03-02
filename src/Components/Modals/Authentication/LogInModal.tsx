@@ -17,9 +17,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 
-type Props = {};
-
-export default function LogInModal({}: Props) {
+export default function LogInModal() {
   const [authenticationModalsStatusState, setAuthenticationModalsStatusState] =
     useRecoilState(authenticationModalsStatusAtom);
 
