@@ -317,41 +317,91 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
           )}
 
           {billingModalViewState === "calculateBill" && (
-            <Flex id="calculate-bill-flex" direction="column" gap="10px">
-              <Flex id="receipt-content" direction="column">
-                <Text color="white" fontSize="15pt" fontWeight="700">
-                  Your Receipt
-                </Text>
-                <Flex id="post-count" align="center" gap="5px">
+            <Flex id="calculate-bill-flex" direction="column" gap="20px">
+              <Text color="white" fontSize="15pt" fontWeight="700">
+                Invoice
+              </Text>
+              <Flex id="receipt-content" width="100%" justify="space-between">
+                <Flex
+                  id="post-count"
+                  align="center"
+                  gap="3px"
+                  direction="column"
+                  border="1px solid gray"
+                  borderRadius="10px"
+                  p="5px"
+                  width="120px"
+                >
                   <Text color="gray.500" fontSize="10pt" fontWeight="600">
-                    Post Count:
+                    Post Count
                   </Text>
                   <Text color="gray.100" fontSize="10pt" fontWeight="700">
                     {calculatedBill.postCount}
                   </Text>
                 </Flex>
-                <Flex id="price-per-post" align="center" gap="5px">
+                <Flex id="cross" align="center">
+                  <Text color="gray.100" fontSize="10pt" fontWeight="700">
+                    x
+                  </Text>
+                </Flex>
+                <Flex
+                  id="price-per-post"
+                  align="center"
+                  gap="3px"
+                  direction="column"
+                  border="1px solid gray"
+                  borderRadius="10px"
+                  p="5px"
+                  width="120px"
+                >
                   <Text color="gray.500" fontSize="10pt" fontWeight="600">
-                    Price Per Post:
+                    Price Per Post
                   </Text>
                   <Text color="gray.100" fontSize="10pt" fontWeight="700">
-                    {calculatedBill.pricePerPost}
+                    {calculatedBill.pricePerPost} (MATIC)
                   </Text>
                 </Flex>
-                <Flex id="total-amount" align="center" gap="5px">
+                <Flex id="equal" align="center">
+                  <Text color="gray.100" fontSize="10pt" fontWeight="700">
+                    =
+                  </Text>
+                </Flex>
+                <Flex
+                  id="total-amount"
+                  align="center"
+                  gap="3px"
+                  direction="column"
+                  border="1px solid gray"
+                  borderRadius="10px"
+                  p="5px"
+                  width="120px"
+                >
                   <Text color="gray.500" fontSize="10pt" fontWeight="600">
-                    Total:
+                    Total
                   </Text>
                   <Text color="gray.100" fontSize="10pt" fontWeight="700">
-                    {calculatedBill.totalPrice}
+                    {calculatedBill.totalPrice} (MATIC)
                   </Text>
                 </Flex>
-                <Flex id="currency" align="center" gap="5px">
-                  <Text color="gray.500" fontSize="10pt" fontWeight="600">
-                    Currency:
-                  </Text>
-                  <Text color="white">{calculatedBill.currency}</Text>
-                </Flex>
+              </Flex>
+
+              <Flex
+                id="disclaimer"
+                align="center"
+                width="100%"
+                direction="column"
+                gap="8px"
+              >
+                <Text color="yellow.600" fontSize="8pt" fontWeight="600">
+                  This price reflects an estimated cost based on current post
+                  count availability. Due to the dynamic nature of our
+                  inventory, the final price may be subject to adjustments
+                  depending on the actual post count at checkout.
+                </Text>
+                <Text color="yellow.600" fontSize="8pt" fontWeight="600">
+                  Review the final price displayed during checkout before
+                  confirming your order.
+                </Text>
               </Flex>
 
               <Flex id="create-payment-part" direction="column" gap="5px">
@@ -458,7 +508,7 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
                     Amount:
                   </Text>
                   <Text color="gray.100" fontSize="9pt" fontWeight="700">
-                    {createdPaymentRuleState.price}
+                    {createdPaymentRuleState.price} (MATIC)
                   </Text>
                 </Flex>
 
