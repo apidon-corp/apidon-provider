@@ -5,6 +5,7 @@ import {
   CheckPaymentRuleAPIResponse,
   PaymentRuleInServer,
 } from "@/types/Billing";
+import { apidonPaymentContract } from "@/web3/Payment/ApidonPaymentApp";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -48,12 +49,28 @@ export default async function handler(
   const activeBillDocData =
     activeBillDocCollection.docs[0].data() as PaymentRuleInServer;
 
-  const occured = activeBillDocData.occured;
+  let occured = activeBillDocData.occured;
   const id = activeBillDocData.id;
   const price = activeBillDocData.price;
   const due = activeBillDocData.due;
   const payer = activeBillDocData.payer;
   const integrationStarted = activeBillDocData.integrationStarted;
+
+  // We need to check if operation is occured or not.
+  if (!occured) {
+    let transactionReadOperation;
+    try {
+      transactionReadOperation =
+        await apidonPaymentContract.getProviderPaymentRuleStatus(id);
+    } catch (error) {
+      console.error(
+        "Error while reading for occured status on chain: \n",
+        error
+      );
+      return res.status(500).send("Internal Server Error");
+    }
+    occured = transactionReadOperation;
+  }
 
   response = {
     thereIsNoActivePaymentRule: false,

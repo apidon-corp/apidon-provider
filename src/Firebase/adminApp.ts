@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 
 const buffer = Buffer.from(
-  process.env.NEXT_PUBLIC_GOOGLE_SERVICE_ACCOUNT_KEYS_BASE64 as string,
+  process.env.GOOGLE_SERVICE_ACCOUNT_KEYS_BASE64 as string,
   "base64"
 );
 

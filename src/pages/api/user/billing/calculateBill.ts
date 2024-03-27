@@ -46,7 +46,7 @@ export default async function handler(
     console.error("Error while calculating bill: \n", error);
     return res.status(500).send("Internal Server Error");
   }
-  const pricePerPost = 5;
+  const pricePerPost = 0.01;
   const totalPrice = postsLength * pricePerPost;
 
   const response: CalculateBillAPIReponse = {

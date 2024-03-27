@@ -6,7 +6,8 @@ import {
   CreatePaymentRuleAPIResponse,
   PaymentRuleInServer,
 } from "@/types/Billing";
-import { ethers } from "ethers";
+import { apidonPaymentContract } from "@/web3/Payment/ApidonPaymentApp";
+import { TransactionReceipt, ethers } from "ethers";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -57,7 +58,7 @@ export default async function handler(
    *  - Create new payment rule.
    */
 
-  let price: number;
+  let price;
   try {
     const response = await fetch(
       `${process.env.PROVIDER_ROOT_ADDRESS_URL}/api/user/billing/calculateBill`,
@@ -84,10 +85,14 @@ export default async function handler(
   const now = Date.now();
   const oneDay = 24 * 60 * 60 * 1000;
 
+  const due = now + oneDay;
+
+  // We need to convert matic value to wei
+
   let paymentRule: PaymentRuleInServer = {
     active: true,
     price: price,
-    due: now + oneDay,
+    due: due,
     id: "",
     occured: false,
     payer: payerAddress,
@@ -105,11 +110,14 @@ export default async function handler(
     return res.status(500).send("Internal server error");
   }
 
-  const id = `${operationFromUsername}-${createdDocRef.id}`;
+  const rawId = `${operationFromUsername}-${createdDocRef.id}`;
+  const rawIdByteVersion = ethers.toUtf8Bytes(rawId);
+  const rawIdHashVersion = ethers.sha256(rawIdByteVersion).substring(2, 10);
+  const id = parseInt(rawIdHashVersion, 16);
 
   paymentRule = {
     ...paymentRule,
-    id: id,
+    id: id.toString(),
   };
 
   try {
@@ -118,6 +126,41 @@ export default async function handler(
     });
   } catch (error) {
     console.error("Error while updating 'ruleDoc': \n", error);
+    return res.status(500).send("Internal Server Error");
+  }
+
+  // Creating Blockchain Payment Rule for Provider
+  let transactionReceipt: TransactionReceipt;
+  let transactionOperation;
+
+  // We need to configure ether => wei transformation.
+  const priceInWei = ethers.parseUnits(price.toString(), "ether");
+
+  try {
+    transactionOperation =
+      await apidonPaymentContract.createProviderPaymentRule(
+        payerAddress,
+        priceInWei,
+        id,
+        due
+      );
+  } catch (error) {
+    console.error(
+      "Error while calling 'createProviderPaymentRule' function: \n",
+      error
+    );
+    return res.status(500).send("Internal Server Error");
+  }
+
+  try {
+    transactionReceipt = await transactionOperation.wait(1);
+  } catch (error) {
+    console.error("Error while waiting 1 block for operation: \n", error);
+    return res.status(500).send("Internal Server Error");
+  }
+
+  if (!transactionReceipt) {
+    console.error("Transaction Receipt is null.");
     return res.status(500).send("Internal Server Error");
   }
 
