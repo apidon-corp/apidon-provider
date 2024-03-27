@@ -1,6 +1,5 @@
 import { firestore } from "@/Firebase/adminApp";
 import getDisplayName from "@/apiUtils";
-import { PaymentRuleInServer } from "@/types/Billing";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
