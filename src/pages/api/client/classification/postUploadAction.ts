@@ -49,16 +49,48 @@ export default async function handler(
      * 0-) Geting what image is about from API.
      * Sends imageURL to Classify Modal and gets results as an array.....
      */
-    const probabiltiesArray = ["m", "n"];
+
+    let probabiltiesArray: { class_name: string; probability: number }[] = [];
+    try {
+      const classifyEndpoint =
+        process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
+      if (!classifyEndpoint)
+        throw new Error("Classify Endpoint couldn't be fetch from .env file.");
+
+      const response = await fetch(classifyEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image_url: imageURL,
+          model_path_url: "SmartFeed/models/pytorch/model.pth",
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Response from Python Classify API is not okay: ${await response.text()}`
+        );
+      }
+
+      const result = await response.json();
+
+      probabiltiesArray = result.top_predictions;
+    } catch (error) {
+      console.error("Error while fetching to classify API (Python): ", error);
+      return res.status(500).send("Internal Server Error");
+    }
 
     let themesArray: ThemeObject[] = [];
+    let onlyThemesArray: string[] = [];
 
     probabiltiesArray.forEach((a) => {
       const newThemeObject: ThemeObject = {
-        theme: a,
+        theme: a.class_name,
         ts: Date.now(),
       };
       themesArray.push(newThemeObject);
+      onlyThemesArray.push(a.class_name);
     });
 
     /**
@@ -86,7 +118,7 @@ export default async function handler(
 
     const postThemeObject: PostThemeObject = {
       postDocPath: postDocPath,
-      themes: [...probabiltiesArray],
+      themes: [...onlyThemesArray],
       ts: Date.now(),
     };
 
