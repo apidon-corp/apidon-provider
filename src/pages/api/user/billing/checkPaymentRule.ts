@@ -8,7 +8,10 @@ import {
 import { apidonPaymentContract } from "@/web3/Payment/ApidonPaymentApp";
 import { NextApiRequest, NextApiResponse } from "next";
 
-export const maxDuration = 60;
+export const config = {
+  runtime: "nodejs",
+  maxDuration: 15,
+};
 
 export default async function handler(
   req: NextApiRequest,
