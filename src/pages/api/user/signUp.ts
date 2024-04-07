@@ -6,6 +6,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  return res
+    .status(500)
+    .send("New provider registration is disabled, temporarily.");
+
   const { email, password, providerName } = req.body;
 
   let uidCreated = "";

@@ -51,6 +51,7 @@ export default function AuthButtons() {
             onClick={handleSignUpButton}
             size="sm"
             rounded="full"
+            isDisabled
           >
             Sign Up
           </Button>
