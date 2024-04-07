@@ -2,6 +2,8 @@ import { auth, firestore } from "@/Firebase/adminApp";
 import { IShowcaseItem, UserInServer } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 
+export const maxDuration = 60;
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse

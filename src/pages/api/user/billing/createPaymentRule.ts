@@ -10,6 +10,8 @@ import { apidonPaymentContract } from "@/web3/Payment/ApidonPaymentApp";
 import { TransactionReceipt, ethers } from "ethers";
 import { NextApiRequest, NextApiResponse } from "next";
 
+export const maxDuration = 60;
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse

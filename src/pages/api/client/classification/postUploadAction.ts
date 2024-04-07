@@ -6,6 +6,8 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 const lock = new AsyncLock();
 
+export const maxDuration = 60;
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
