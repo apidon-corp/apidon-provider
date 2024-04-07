@@ -1,9 +1,9 @@
-import ShowcaseArea from "@/Components/Areas/ShowcaseArea/ShowcaseArea";
-import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import AlgorithmArea from "@/Components/Areas/ModelArea/ModelArea";
 import OfferArea from "@/Components/Areas/OfferArea/OfferArea";
+import ShowcaseArea from "@/Components/Areas/ShowcaseArea/ShowcaseArea";
 import StatsArea from "@/Components/Areas/StatsArea/StatsArea";
 import TopArea from "@/Components/Areas/TopArea/TopArea";
+import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import { Flex, Text } from "@chakra-ui/react";
 import { useRecoilValue } from "recoil";
 

@@ -2,23 +2,20 @@ import { ethers } from "ethers";
 
 import paymentContract from "./ApidonPayment.json";
 
-const apidonPaymentContractMumbaiAddress =
-  "0x99aD82d752a585C1eC310FEA3c171d1Fb3e1Ca1F";
+const apidonPaymentContractSepoliaAddress = process.env
+  .APIDON_PAYMENT_CONTRACT_SEPOLIA_ADDRESS as string;
 
-const contractInteractionAPIKey = process.env
-  .ALCHEMY_MUBMAI_NETOWRK_APIDON_PAYMENT_CONTRACT_API as string;
+const providerAccessURL = process.env.ALCHEMY_SEPOLIA_NETWORK_URL as string;
 
-const provider = new ethers.AlchemyProvider(
-  "maticmum",
-  contractInteractionAPIKey
-);
+const provider = new ethers.JsonRpcProvider(providerAccessURL);
 
-const walletPrivateKey = process.env.METAMASK_ACCOUNT_TWO_PRIVATE_KEY as string;
+const walletPrivateKey = process.env
+  .WEB3_PROVIDER_MAIN_WALLET_PRIVATE_ADDRESS as string;
 
 const wallet = new ethers.Wallet(walletPrivateKey, provider);
 
 const apidonPaymentContract = new ethers.Contract(
-  apidonPaymentContractMumbaiAddress,
+  apidonPaymentContractSepoliaAddress,
   paymentContract.abi,
   wallet
 );

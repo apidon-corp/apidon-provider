@@ -12,8 +12,6 @@ export interface UserInServer {
 
   clientCount: number;
 
-  algorithm: string;
-
   uid: string;
 }
 
@@ -32,8 +30,6 @@ export interface CurrentUser {
 
   uid: string;
 
-  algorithm: string;
-
   isThereCurrentUser: boolean;
 }
 
@@ -51,7 +47,6 @@ export const DefaultCurrentUser: CurrentUser = {
   clientCount: -1,
 
   uid: "",
-  algorithm: "",
   isThereCurrentUser: false,
 };
 

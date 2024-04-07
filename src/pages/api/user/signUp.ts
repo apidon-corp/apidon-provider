@@ -34,7 +34,6 @@ export default async function handler(
     sumScore: 0,
     rateCount: 0,
 
-    algorithm: "",
     uid: uidCreated,
   };
 
@@ -51,7 +50,9 @@ export default async function handler(
   }
 
   try {
-    await firestore.doc(`users/${providerName}/postThemes/postThemes`).set({});
+    await firestore.doc(`users/${providerName}/postThemes/postThemes`).set({
+      postThemesArray: [],
+    });
   } catch (error) {
     console.error(
       "Error on creation of provider. (We were creating postThemes/postThemes Doc for it.)",
