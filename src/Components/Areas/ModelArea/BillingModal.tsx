@@ -410,7 +410,7 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
                 </Text>
                 <Flex id="payer-address-part" direction="column" gap="15px">
                   <Text color="yellow.600" fontSize="8pt" fontWeight="600">
-                    Plesae provide a "payer" address. Note that, you can only
+                    Plesae provide a &ldquo;payer&ldquo; address. Note that, you can only
                     make payment with the address you will provide.
                   </Text>
                   <InputGroup>
