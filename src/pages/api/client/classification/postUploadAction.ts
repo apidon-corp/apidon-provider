@@ -55,7 +55,7 @@ export default async function handler(
      * Sends imageURL to Classify Modal and gets results as an array.....
      */
 
-    let probabiltiesArray: { class_name: string; probability: number }[] = [];
+    let probabiltiesArray: { label: string; score: number }[] = [];
     try {
       const classifyEndpoint =
         process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
@@ -69,7 +69,6 @@ export default async function handler(
         },
         body: JSON.stringify({
           image_url: imageURL,
-          model_path_url: "SmartFeed/models/pytorch/model.pth",
         }),
       });
       if (!response.ok) {
@@ -80,7 +79,7 @@ export default async function handler(
 
       const result = await response.json();
 
-      probabiltiesArray = result.top_predictions;
+      probabiltiesArray = result["Combined Predictions"];
     } catch (error) {
       console.error("Error while fetching to classify API (Python): ", error);
       return res.status(500).send("Internal Server Error");
@@ -91,11 +90,11 @@ export default async function handler(
 
     probabiltiesArray.forEach((a) => {
       const newThemeObject: ThemeObject = {
-        theme: a.class_name,
+        theme: a.label,
         ts: Date.now(),
       };
       themesArray.push(newThemeObject);
-      onlyThemesArray.push(a.class_name);
+      onlyThemesArray.push(a.label);
     });
 
     /**
