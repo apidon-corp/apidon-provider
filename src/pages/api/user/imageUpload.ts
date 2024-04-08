@@ -8,6 +8,8 @@ export const config = {
       sizeLimit: "4mb",
     },
   },
+  runtime: "nodejs",
+  maxDuration: 120,
 };
 
 export default async function handler(
