@@ -54,12 +54,16 @@ export default async function handler(
     return res.status(503).send("Firebase Error");
   }
   const startTime = Date.now();
+  
   const thirtyDay = 30 * 24 * 60 * 60 * 1000;
-  const tenMinutes = 60 * 10 * 1000;
+  const threeDay = thirtyDay / 10;
+
+  const fiveMinutes = 60 * 5 * 1000;
+
   const dealResultObject: IDealResult = {
     name: provider,
     startTime: startTime,
-    endTime: startTime + thirtyDay,
+    endTime: startTime + threeDay,
     yield: providerDocSnapshot.data()?.offer,
   };
 
@@ -111,7 +115,7 @@ export default async function handler(
 
   let clientObject: ClientObject = {
     active: true,
-    endTime: startTime + thirtyDay,
+    endTime: startTime + threeDay,
     score: 0,
     startTime: startTime,
     debt: providerDocSnapshot.data()?.offer,

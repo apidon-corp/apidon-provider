@@ -38,7 +38,8 @@ export default async function handler(
   if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
     return res.status(401).send("unauthorized");
 
-  if (!username || !postDocPath || !imageURL || !providerId)
+  // But some posts doesn't have image...
+  if (!username || !postDocPath || !providerId)
     return res.status(422).send("Invalid Prop or Props.");
 
   /**
@@ -56,33 +57,44 @@ export default async function handler(
      */
 
     let probabiltiesArray: { label: string; score: number }[] = [];
-    try {
-      const classifyEndpoint =
-        process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
-      if (!classifyEndpoint)
-        throw new Error("Classify Endpoint couldn't be fetch from .env file.");
+    if (imageURL)
+      try {
+        const classifyEndpoint =
+          process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
+        if (!classifyEndpoint)
+          throw new Error(
+            "Classify Endpoint couldn't be fetch from .env file."
+          );
 
-      const response = await fetch(classifyEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          image_url: imageURL,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Response from Python Classify API is not okay: ${await response.text()}`
-        );
+        const response = await fetch(classifyEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image_url: imageURL,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error(
+            `Response from Python Classify API is not okay: ${await response.text()}`
+          );
+        }
+
+        const result = await response.json();
+
+        probabiltiesArray = result["Combined Predictions"];
+      } catch (error) {
+        console.error("Error while fetching to classify API (Python): ", error);
+        return res.status(500).send("Internal Server Error");
       }
-
-      const result = await response.json();
-
-      probabiltiesArray = result["Combined Predictions"];
-    } catch (error) {
-      console.error("Error while fetching to classify API (Python): ", error);
-      return res.status(500).send("Internal Server Error");
+    else {
+      probabiltiesArray = [
+        {
+          label: "text",
+          score: 1,
+        },
+      ];
     }
 
     let themesArray: ThemeObject[] = [];
@@ -100,6 +112,7 @@ export default async function handler(
     /**
      * 1-) Update providerId/clients/clientId doc's themesArray array that => He loves cat, dogs...
      */
+
     try {
       await firestore
         .doc(`users/${providerId}/clients/${username}-${startTime}`)

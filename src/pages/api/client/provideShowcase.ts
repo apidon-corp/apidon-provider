@@ -1,5 +1,5 @@
 import { firestore } from "@/Firebase/adminApp";
-import { IShowcaseItem } from "@/types/User";
+import { IShowcaseItem, ShowCaseItem } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export const config = {
@@ -52,9 +52,23 @@ export default async function handler(
     );
     return res.status(503).send("Internal Server Error");
   }
-  let providersShowcaseDatas: IShowcaseItem[] = [];
-  for (const proivderDoc of providersShowcaseCollectionSnapshot.docs) {
-    providersShowcaseDatas.push(proivderDoc.data() as IShowcaseItem);
+  let providersShowcaseDatas: ShowCaseItem[] = [];
+  for (const providerDoc of providersShowcaseCollectionSnapshot.docs) {
+    const providerDocData = providerDoc.data() as IShowcaseItem;
+
+    const showcaseObject: ShowCaseItem = {
+      clientCount: providerDocData.clientCount,
+      description: providerDocData.description,
+      image: providerDocData.image,
+      name: providerDocData.name,
+      offer: providerDocData.offer,
+      score:
+        providerDocData.rateCount === 0
+          ? 0
+          : providerDocData.sumScore / providerDocData.sumScore,
+    };
+
+    providersShowcaseDatas.push(showcaseObject);
   }
 
   return res.status(200).json({
