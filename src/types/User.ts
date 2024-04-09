@@ -50,6 +50,9 @@ export const DefaultCurrentUser: CurrentUser = {
   isThereCurrentUser: false,
 };
 
+/**
+ * Use for database operations at showcase doc of provider.
+ */
 export interface IShowcaseItem {
   name: string;
   description: string;
@@ -61,6 +64,20 @@ export interface IShowcaseItem {
   clientCount: number;
   offer: number;
 }
+
+/**
+ * Use at provideShowcase API
+ */
+export type ShowCaseItem = {
+  name: string;
+  description: string;
+  image: string;
+
+  score: number;
+
+  clientCount: number;
+  offer: number;
+};
 
 export interface IDealResult {
   name: string;
