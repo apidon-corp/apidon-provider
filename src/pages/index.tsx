@@ -17,7 +17,7 @@ export default function Home() {
           direction="column"
           justify="center"
           align="center"
-          width="85%"
+          width="95%"
           gap="5"
           px="1"
         >

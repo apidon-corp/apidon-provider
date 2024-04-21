@@ -65,7 +65,7 @@ export default async function handler(
       score:
         providerDocData.rateCount === 0
           ? 0
-          : providerDocData.sumScore / providerDocData.sumScore,
+          : providerDocData.sumScore / providerDocData.rateCount,
     };
 
     providersShowcaseDatas.push(showcaseObject);
