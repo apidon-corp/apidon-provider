@@ -103,7 +103,15 @@ export default async function handler(
     const themes = postThemeObject.themes;
     let value = 0;
     for (const theme of themes) {
-      if (clientKeys.includes(theme)) value++;
+      // Simulating different algorithms has different technics
+
+      if (provider === "LogicHead") {
+        if (clientKeys.includes(theme)) value++;
+      } else if (provider === "SmartFeed") {
+        const random = Math.round(Math.random()); // 0 or 1
+        if (random === 1) if (clientKeys.includes(theme)) value++;
+        if (random === 0) if (clientKeys.includes(theme)) value--;
+      }
     }
 
     if (value === 0) continue;
