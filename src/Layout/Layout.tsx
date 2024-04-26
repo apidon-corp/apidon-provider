@@ -1,7 +1,9 @@
 import Footer from "@/Components/Footer/Footer";
-import LogInModal from "@/Components/Modals/Authentication/LoginModal";
+import LogInModal from "@/Components/Modals/Authentication/LogInModal";
+
 import ResetPasswordModal from "@/Components/Modals/Authentication/PasswordResetModal";
-import SignUpModal from "@/Components/Modals/Authentication/SignupModal";
+import SignUpModal from "@/Components/Modals/Authentication/SignUpModal";
+
 import Navbar from "@/Components/Navbar/Navbar";
 import { authenticationModalsStatusAtom } from "@/atoms/authenticationModalsStatusAtom";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
