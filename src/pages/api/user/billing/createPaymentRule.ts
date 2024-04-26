@@ -1,4 +1,4 @@
-import { firestore } from "@/Firebase/adminApp";
+import { firestore } from "@/firebase/adminApp";
 import getDisplayName from "@/apiUtils";
 import {
   CalculateBillAPIReponse,

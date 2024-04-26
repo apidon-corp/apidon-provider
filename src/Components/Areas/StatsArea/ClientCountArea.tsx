@@ -19,7 +19,7 @@ export default function ClientCountArea() {
         Client Count
       </Text>
       <Text color="red" fontWeight="700" fontSize="20pt">
-        {currentUserState.clientCount ? currentUserState.clientCount : "NaN"}
+        {currentUserState.clientCount ? currentUserState.clientCount : "0"}
       </Text>
     </Flex>
   );

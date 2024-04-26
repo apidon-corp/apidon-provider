@@ -1,4 +1,4 @@
-import { firestore } from "@/Firebase/adminApp";
+import { firestore } from "@/firebase/adminApp";
 import { IShowcaseItem, ShowCaseItem } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 

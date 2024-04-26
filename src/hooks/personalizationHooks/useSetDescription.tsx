@@ -1,4 +1,4 @@
-import { auth } from "@/Firebase/clientApp";
+import { auth } from "@/firebase/clientApp";
 
 export default function useSetDescription() {
   const handleUpdateDescription = async (description: string) => {

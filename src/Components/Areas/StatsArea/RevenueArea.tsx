@@ -21,7 +21,7 @@ export default function RevenueArea() {
       <Text color="green" fontWeight="700" fontSize="20pt">
         {currentUserState.revenue
           ? currentUserState.revenue.toString().slice(0, 4)
-          : "NaN"}
+          : "0"}
       </Text>
     </Flex>
   );

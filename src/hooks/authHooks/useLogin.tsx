@@ -1,4 +1,4 @@
-import { auth, firestore } from "@/Firebase/clientApp";
+import { auth, firestore } from "@/firebase/clientApp";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 
 import { UserInServer } from "@/types/User";
@@ -20,6 +20,12 @@ export default function useLogin() {
   const [currentUserState, setCurrentUserState] =
     useRecoilState(currentUserStateAtom);
 
+  /**
+   * Direcly affects auth object.
+   * @param email
+   * @param password
+   * @returns
+   */
   const logSignedOutUserIn = async (email: string, password: string) => {
     let userCred: UserCredential;
     try {
@@ -34,42 +40,7 @@ export default function useLogin() {
     // logSignedUserIn automatically runs by "Layout"
   };
 
-  const logSignedUserIn = async (user: User) => {
-    let signedInUserDocSnapshot: DocumentSnapshot<DocumentData>;
-    try {
-      signedInUserDocSnapshot = await getDoc(
-        doc(firestore, `users/${user.displayName}`)
-      );
-    } catch (error) {
-      console.error(
-        "Error while log user in. (We were getting doc with userCred.",
-        error
-      );
-      return false;
-    }
-
-    if (!signedInUserDocSnapshot.exists()) {
-      console.error("Error while login. (User snapshot doesn't exixt)");
-      return false;
-    }
-
-    const userDataInServer = signedInUserDocSnapshot.data() as UserInServer;
-
-    setCurrentUserState({
-      ...userDataInServer,
-      isThereCurrentUser: true,
-      score: Number(
-        ((userDataInServer.sumScore / userDataInServer.rateCount) * 20)
-          .toString()
-          .slice(0, 4)
-      ),
-    });
-
-    return true;
-  };
-
   return {
     logSignedOutUserIn,
-    logSignedUserIn,
   };
 }

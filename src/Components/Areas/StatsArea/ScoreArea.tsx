@@ -19,7 +19,7 @@ export default function ScoreArea() {
         Score
       </Text>
       <Text color="yellow.500" fontWeight="700" fontSize="20pt">
-        {currentUserState.score ? currentUserState.score : "NaN"}%
+        {currentUserState.score ? currentUserState.score : "0"}%
       </Text>
     </Flex>
   );

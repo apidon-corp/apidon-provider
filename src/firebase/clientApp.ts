@@ -1,7 +1,15 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref } from "firebase/storage";
+
+import {
+  AppCheck,
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
+
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -20,8 +28,18 @@ const firestore = getFirestore(app);
 
 const auth = getAuth(app);
 
-const storage = getStorage(app)
+const storage = getStorage(app);
 
+let appCheck: AppCheck;
+if (typeof window !== "undefined") {
+  // Initialize analytics only on the client-side
+  getAnalytics(app);
+  appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(
+      process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY as string
+    ),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
 
-
-export { app, auth, firestore, storage, ref};
+export { app, auth, firestore, storage, ref, appCheck };
