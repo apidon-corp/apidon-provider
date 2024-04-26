@@ -1,7 +1,8 @@
 import Footer from "@/Components/Footer/Footer";
-import GeneralAuthenticationModals from "@/Components/Modals/Authentication/GeneralAuthenticationModals";
+import LogInModal from "@/Components/Modals/Authentication/LoginModal";
+import SignUpModal from "@/Components/Modals/Authentication/SignupModal";
 import Navbar from "@/Components/Navbar/Navbar";
-import { auth } from "@/Firebase/clientApp";
+import { auth } from "@/firebase/clientApp";
 import useLogin from "@/hooks/authHooks/useLogin";
 import { Box, Center, Flex, Image } from "@chakra-ui/react";
 import { ReactNode, useEffect, useState } from "react";
@@ -42,7 +43,8 @@ export default function Layout({ children }: Props) {
       ) : (
         <Box>
           <Navbar />
-          <GeneralAuthenticationModals />
+          <LogInModal />
+          <SignUpModal />
           <Flex justifyContent="center">{children}</Flex>
           <Footer />
         </Box>

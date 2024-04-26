@@ -17,13 +17,13 @@ export default function AuthButtons() {
 
   const handleSignUpButton = () => {
     setAuthenticationModalsStatusState({
-      currentPanelName: "signup",
+      view: "signup",
       open: true,
     });
   };
   const handleLoginButton = () => {
     setAuthenticationModalsStatusState({
-      currentPanelName: "login",
+      view: "login",
       open: true,
     });
   };
@@ -31,7 +31,7 @@ export default function AuthButtons() {
   const handleSignOutButton = async () => {
     setSignOutButtonLoading(true);
     setAuthenticationModalsStatusState({
-      currentPanelName: "login",
+      view: "login",
       open: true,
     });
 
@@ -51,7 +51,7 @@ export default function AuthButtons() {
             onClick={handleSignUpButton}
             size="sm"
             rounded="full"
-            isDisabled
+            //isDisabled
           >
             Sign Up
           </Button>

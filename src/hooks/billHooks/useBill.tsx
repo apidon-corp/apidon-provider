@@ -1,4 +1,4 @@
-import { auth } from "@/Firebase/clientApp";
+import { auth } from "@/firebase/clientApp";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import {
   CalculateBillAPIReponse,
@@ -135,5 +135,10 @@ export default function useBill() {
     }
   };
 
-  return { checkPaymentRuleStatus, calculateBill, createPaymentRule, cancelBill };
+  return {
+    checkPaymentRuleStatus,
+    calculateBill,
+    createPaymentRule,
+    cancelBill,
+  };
 }

@@ -1,4 +1,4 @@
-import { auth } from "@/Firebase/clientApp";
+import { auth } from "@/firebase/clientApp";
 
 export default function useSetOffer() {
   const setOffer = async (offer: number) => {
@@ -6,7 +6,10 @@ export default function useSetOffer() {
     try {
       idToken = (await auth.currentUser?.getIdToken()) as string;
     } catch (error) {
-      console.error("Error while setting offer. Couldn't be got idToken", error);
+      console.error(
+        "Error while setting offer. Couldn't be got idToken",
+        error
+      );
       return false;
     }
     let response;

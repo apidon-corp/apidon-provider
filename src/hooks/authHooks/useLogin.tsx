@@ -1,4 +1,4 @@
-import { auth, firestore } from "@/Firebase/clientApp";
+import { auth, firestore } from "@/firebase/clientApp";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 
 import { UserInServer } from "@/types/User";
@@ -20,6 +20,12 @@ export default function useLogin() {
   const [currentUserState, setCurrentUserState] =
     useRecoilState(currentUserStateAtom);
 
+  /**
+   * Direcly affects auth object.
+   * @param email
+   * @param password
+   * @returns
+   */
   const logSignedOutUserIn = async (email: string, password: string) => {
     let userCred: UserCredential;
     try {

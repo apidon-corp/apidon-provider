@@ -1,4 +1,4 @@
-import { fieldValue, firestore } from "@/Firebase/adminApp";
+import { fieldValue, firestore } from "@/firebase/adminApp";
 import { PostThemeObject, ThemeObject } from "@/types/Classification";
 import AsyncLock from "async-lock";
 import { NextApiRequest, NextApiResponse } from "next";

@@ -1,4 +1,4 @@
-import { auth } from "@/Firebase/clientApp";
+import { auth } from "@/firebase/clientApp";
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 
 import { DefaultCurrentUser } from "@/types/User";

@@ -1,4 +1,4 @@
-import { fieldValue, firestore } from "@/Firebase/adminApp";
+import { fieldValue, firestore } from "@/firebase/adminApp";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export const config = {

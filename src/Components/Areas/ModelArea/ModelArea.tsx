@@ -1,4 +1,4 @@
-import { auth, firestore } from "@/Firebase/clientApp";
+import { auth, firestore } from "@/firebase/clientApp";
 import useUpdateModelSettings from "@/hooks/modelHooks/useUpdateModelSettings";
 import useUploadModel from "@/hooks/modelHooks/useUploadModel";
 import { ModelSettings } from "@/types/Model";

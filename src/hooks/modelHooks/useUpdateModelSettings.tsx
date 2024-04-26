@@ -1,4 +1,4 @@
-import { auth } from "@/Firebase/clientApp";
+import { auth } from "@/firebase/clientApp";
 import { ModelSettings } from "@/types/Model";
 
 export default function useUpdateModelSettings() {

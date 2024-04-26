@@ -1,4 +1,4 @@
-import { auth } from "./Firebase/adminApp";
+import { auth } from "./firebase/adminApp";
 
 /**
  * To get displayname of user from its auth object if request source is real.
