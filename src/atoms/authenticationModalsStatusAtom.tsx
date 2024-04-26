@@ -1,7 +1,7 @@
 import { atom } from "recoil";
 
 interface IAuthenticationModalsStatusAtom {
-  view: "signup" | "login";
+  view: "signup" | "login" | "resetPassword"
   open: boolean;
 }
 

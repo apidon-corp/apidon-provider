@@ -584,10 +584,10 @@ export default function LogInModal() {
                   textDecor="underline"
                   cursor="pointer"
                   onClick={() => {
-                    // setAuthModalState({
-                    //   open: true,
-                    //   view: "resetPassword",
-                    // });
+                    setAuthModalState({
+                      open: true,
+                      view: "resetPassword",
+                    });
                   }}
                 >
                   Forgot your password? Reset it!
