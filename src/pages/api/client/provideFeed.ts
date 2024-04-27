@@ -132,6 +132,24 @@ export default async function handler(
     postDocPathArray.push(valuedPostThemeObject.postDocPath);
   }
 
+  // To show posts to new users, we are randomly choosing posts.
+  if (postDocPathArray.length === 0) {
+    let randomPostDocs: PostThemeObject[] = [];
+
+    for (let index = 0; index < 15; index++) {
+      const randomIndex = Math.floor(Math.random() * 83);
+      const randomPostDoc = postThemesArray[randomIndex];
+      if (randomPostDoc !== undefined) randomPostDocs.push(randomPostDoc);
+    }
+
+    randomPostDocs.sort((a, b) => b.ts - a.ts);
+
+    for (const randomPostDoc of randomPostDocs) {
+      const randomPostDocPath = randomPostDoc.postDocPath;
+      postDocPathArray.push(randomPostDocPath);
+    }
+  }
+
   postDocPathArray = Array.from(new Set(postDocPathArray));
 
   return res.status(200).json({
