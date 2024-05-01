@@ -66,10 +66,17 @@ export default async function handler(
             "Classify Endpoint couldn't be fetch from .env file."
           );
 
+        const apikey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
+
+        if (!apikey) {
+          throw new Error("Classify API KEY couldn't be fetch from .env file.");
+        }
+
         const response = await fetch(classifyEndpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            APIKEY: apikey,
           },
           body: JSON.stringify({
             image_url: imageURL,
