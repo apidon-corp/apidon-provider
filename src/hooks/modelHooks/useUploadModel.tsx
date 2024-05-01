@@ -1,5 +1,4 @@
 import { auth, ref, storage } from "@/firebase/clientApp";
-import { ModelOptions } from "firebase-admin/lib/machine-learning/machine-learning-api-client";
 import { getDownloadURL, uploadBytes } from "firebase/storage";
 
 export default function useUploadModel() {

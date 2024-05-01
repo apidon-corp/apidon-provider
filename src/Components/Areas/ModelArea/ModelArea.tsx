@@ -95,59 +95,56 @@ export default function AlgorithmArea() {
   const handleIntegrateModel = async () => {
     /** Firebase Part
      * Upload classification model to Firebase Storage and get url of uploaded model.
-     * Update or set "modelSettings/modelSettings" doc with new data.
      */
 
     /** Python API Part
      * We need to send model path to the API via "upload_model" endpoint.
+     * Then, we get api endpoint for classfication.
+     */
+
+    /** Firebase Part
+     * Update or set "modelSettings/modelSettings" doc with new data.
+     */
+
+    /** Firebase Part
+     * We need to get posts/posts doc and posts array for doc paths.
+     * But we need also iamge url's of them.
+     * So we need to connect apidon-user's database to get image urls of posts.
      */
 
     /** Python API Part
      * We need to use "useModel" Python API to classfiy images.
      */
 
-    /** Firebase Part 
-     * Update postThemes/postThemes doc postThemes array.
+    /** Firebase Part
+     * Update postThemes/postThemes doc postThemes array for provider's firestore.
      */
 
     setLoading(true);
 
-    let newModelPath = "";
-    let modelSettingsFinal = { ...modelSettingsState };
-
-    if (modelFileChoosen) {
-      const uploadResult = await uploadModel(
-        modelFileChoosen,
-        modelSettingsState.modelExtension
-      );
-
-      if (!uploadResult) {
-        console.error("Upload result is not good. Aborting....");
-        setLoading(false);
-        return;
-      }
-
-      // We checked if uploadResult is false or not above, so below statement is string.
-      newModelPath = uploadResult;
-
-      modelSettingsFinal = {
-        ...modelSettingsState,
-        modelPath: newModelPath,
-      };
+    if (!modelFileChoosen) {
+      console.error("There is no file choosen.");
+      return setLoading(false);
     }
 
-    setModelSettingsState(modelSettingsFinal);
+    const modelPathURL = await uploadModel(
+      modelFileChoosen,
+      modelSettingsState.modelExtension
+    );
 
-    // Just for newModelPath....
-    const operationResult = await updateModelSettings(modelSettingsFinal);
-
-    // Acutally just for newModelPath....
-    if (operationResult) {
-      setInitialModelSettingState(modelSettingsFinal);
-      clearModelInput();
-    } else {
-      console.error("Operation Result is not good from 'updateModelSettings'");
+    if (!modelPathURL) {
+      console.error("Model upload operation is failed.");
+      return setLoading(false);
     }
+
+    // Integrate model API...
+    try {
+    } catch (error) {}
+
+    // State Management
+    // setModelSettingsState(modelSettingsFinal);
+    // setInitialModelSettingState(modelSettingsFinal);
+    // clearModelInput();
 
     return setLoading(false);
   };

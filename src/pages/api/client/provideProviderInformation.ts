@@ -31,7 +31,7 @@ export default async function handler(
   const { authorization } = req.headers;
   const { providerName, startTime, client } = req.body;
 
-  if (authorization !== process.env.NEXT_PUBLIC_API_KEY_BETWEEN_SERVICES)
+  if (authorization !== process.env.API_KEY_BETWEEN_SERVICES)
     return res.status(401).send("unauthorized");
 
   if (!providerName || !startTime || !client) {
