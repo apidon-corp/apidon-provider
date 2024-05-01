@@ -92,7 +92,24 @@ export default function AlgorithmArea() {
     setBillingModalState({ isOpen: true });
   };
 
-  const handleIntegrateModelButton = async () => {
+  const handleIntegrateModel = async () => {
+    /** Firebase Part
+     * Upload classification model to Firebase Storage and get url of uploaded model.
+     * Update or set "modelSettings/modelSettings" doc with new data.
+     */
+
+    /** Python API Part
+     * We need to send model path to the API via "upload_model" endpoint.
+     */
+
+    /** Python API Part
+     * We need to use "useModel" Python API to classfiy images.
+     */
+
+    /** Firebase Part 
+     * Update postThemes/postThemes doc postThemes array.
+     */
+
     setLoading(true);
 
     let newModelPath = "";
@@ -122,11 +139,9 @@ export default function AlgorithmArea() {
     setModelSettingsState(modelSettingsFinal);
 
     // Just for newModelPath....
-
     const operationResult = await updateModelSettings(modelSettingsFinal);
 
     // Acutally just for newModelPath....
-
     if (operationResult) {
       setInitialModelSettingState(modelSettingsFinal);
       clearModelInput();
@@ -134,7 +149,7 @@ export default function AlgorithmArea() {
       console.error("Operation Result is not good from 'updateModelSettings'");
     }
 
-    setLoading(false);
+    return setLoading(false);
   };
 
   const handleDiscardChangesButton = async () => {
@@ -187,7 +202,7 @@ export default function AlgorithmArea() {
 
   return (
     <>
-      <BillingModal handleIntegrateModel={handleIntegrateModelButton} />
+      <BillingModal handleIntegrateModel={handleIntegrateModel} />
       <Flex
         id="algorithm-area"
         direction="column"
