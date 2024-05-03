@@ -1,13 +1,12 @@
+import { billingModalStatusAtom } from "@/atoms/billingModalStatusAtom";
 import { auth, firestore } from "@/firebase/clientApp";
-import useUpdateModelSettings from "@/hooks/modelHooks/useUpdateModelSettings";
 import useUploadModel from "@/hooks/modelHooks/useUploadModel";
 import { ModelSettings } from "@/types/Model";
 import { Button, Flex, Input, Select, Text } from "@chakra-ui/react";
 import { doc, getDoc } from "firebase/firestore";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { useSetRecoilState } from "recoil";
 import BillingModal from "./BillingModal";
-import { useRecoilState } from "recoil";
-import { billingModalStatusAtom } from "@/atoms/billingModalStatusAtom";
 
 export default function AlgorithmArea() {
   const modelInputRef = useRef<HTMLInputElement>(null);
@@ -31,12 +30,9 @@ export default function AlgorithmArea() {
 
   const [differenceMade, setDifferenceMade] = useState(false);
 
-  const { updateModelSettings } = useUpdateModelSettings();
   const { uploadModel } = useUploadModel();
 
-  const [billingModalState, setBillingModalState] = useRecoilState(
-    billingModalStatusAtom
-  );
+  const setBillingModalState = useSetRecoilState(billingModalStatusAtom);
 
   // Initially fetch data...
   useEffect(() => {
@@ -45,21 +41,8 @@ export default function AlgorithmArea() {
 
   // Set buttons status...
   useEffect(() => {
-    if (modelFileChoosen !== null) return setDifferenceMade(true);
-
-    const currentValues = Object.values(modelSettingsState);
-    const initialValues = Object.values(initialModelSettingState);
-
-    for (const currentValue of currentValues) {
-      if (!initialValues.includes(currentValue)) {
-        // There is difference between inital and current values...
-        setDifferenceMade(true);
-        break;
-      } else {
-        setDifferenceMade(false);
-      }
-    }
-  }, [modelSettingsState, initialModelSettingState, modelFileChoosen]);
+    setDifferenceMade(modelFileChoosen !== null);
+  }, [modelFileChoosen]);
 
   const handleSelection = async (
     event: React.ChangeEvent<HTMLSelectElement>
@@ -93,33 +76,6 @@ export default function AlgorithmArea() {
   };
 
   const handleIntegrateModel = async () => {
-    /** Firebase Part
-     * Upload classification model to Firebase Storage and get url of uploaded model.
-     */
-
-    /** Python API Part
-     * We need to send model path to the API via "upload_model" endpoint.
-     * Then, we get api endpoint for classfication.
-     */
-
-    /** Firebase Part
-     * Update or set "modelSettings/modelSettings" doc with new data.
-     */
-
-    /** Firebase Part
-     * We need to get posts/posts doc and posts array for doc paths.
-     * But we need also iamge url's of them.
-     * So we need to connect apidon-user's database to get image urls of posts.
-     */
-
-    /** Python API Part
-     * We need to use "useModel" Python API to classfiy images.
-     */
-
-    /** Firebase Part
-     * Update postThemes/postThemes doc postThemes array for provider's firestore.
-     */
-
     setLoading(true);
 
     if (!modelFileChoosen) {
@@ -137,16 +93,58 @@ export default function AlgorithmArea() {
       return setLoading(false);
     }
 
-    // Integrate model API...
+    const authObject = auth.currentUser;
+
+    if (authObject === null) {
+      console.error("There is no user for operation.");
+      return setLoading(false);
+    }
+
+    const idToken = await authObject.getIdToken();
+    if (idToken === undefined) {
+      console.error("IdToken is undefined.");
+      return setLoading(false);
+    }
+
     try {
-    } catch (error) {}
+      // Prepearing body.
+      const body: ModelSettings = {
+        inputImageSizes: modelSettingsState.inputImageSizes,
+        modelEnvironment: modelSettingsState.modelEnvironment,
+        modelExtension: modelSettingsState.modelExtension,
+        modelPath: modelPathURL,
+      };
 
-    // State Management
-    // setModelSettingsState(modelSettingsFinal);
-    // setInitialModelSettingState(modelSettingsFinal);
-    // clearModelInput();
+      const response = await fetch("api/user/model/integrateModel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${idToken}`,
+        },
 
-    return setLoading(false);
+        body: JSON.stringify({ ...body }),
+      });
+
+      if (!response.ok) {
+        console.error(
+          "Response from 'integrateModel' is not okay: \n",
+          await response.text()
+        );
+        return setLoading(false);
+      }
+
+      // Everthing is alright...
+      setModelSettingsState((prev) => ({ ...prev, modelPath: modelPathURL }));
+      setInitialModelSettingState((prev) => ({
+        ...prev,
+        modelPath: modelPathURL,
+      }));
+      clearModelInput();
+      return setLoading(false);
+    } catch (error) {
+      console.error("Error on fetching integrateModelAPI: \n", error);
+      return setLoading(false);
+    }
   };
 
   const handleDiscardChangesButton = async () => {

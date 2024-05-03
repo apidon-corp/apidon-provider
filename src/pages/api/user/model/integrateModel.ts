@@ -1,6 +1,6 @@
 import getDisplayName from "@/apiUtils";
 import { firestore } from "@/firebase/adminApp";
-import { Post } from "@/types/Classification";
+import { Post, PostThemeObject } from "@/types/Classification";
 import { ModelSettings, ModelSettingsServer } from "@/types/Model";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -22,6 +22,36 @@ export default async function handler(
 
   if (!inputImageSizes || !modelEnvironment || !modelExtension || !modelPath)
     return res.status(422).send("Invalid Prop or Props");
+
+  // Updating integration status on bill doc...
+  let activeBillDocCollection;
+  try {
+    activeBillDocCollection = await firestore
+      .collection(`users/${operationFromUsername}/bills`)
+      .where("active", "==", true)
+      .get();
+    if (activeBillDocCollection.empty)
+      throw new Error("There is no active bill doc.");
+    if (activeBillDocCollection.docs.length !== 1)
+      throw new Error("There are more then one active bill doc.");
+  } catch (error) {
+    console.error("Error on getting active bill doc: \n", error);
+    return res.status(500).send("Internal Server Error");
+  }
+
+  const activeBillDoc = activeBillDocCollection.docs[0];
+
+  try {
+    await activeBillDoc.ref.update({
+      integrationStarted: true,
+    });
+  } catch (error) {
+    console.error(
+      "Error on updatimg 'activeBill' doc while changing 'integrationStarted' field: \n",
+      error
+    );
+    return res.status(500).send("Internal Server Error");
+  }
 
   /**
    * Creating API endpoint for this model.
@@ -72,7 +102,7 @@ export default async function handler(
 
     const postsArrayFetched = postsDocData.postsArray as Post[];
 
-    if (!postsArray || postsArray === undefined) {
+    if (!postsArrayFetched || postsArrayFetched === undefined) {
       console.error("postsArray is undefined or null.");
       return res.status(500).send("Internal Server Error");
     }
@@ -136,6 +166,67 @@ export default async function handler(
   /** Classification Part
    * Now, we need to classify each image then creates new with predictions and postDocPath.
    */
+
+  // Creating promises array for classifying posts.
+  const classifyPostsPromisesArray: Promise<false | PostThemeObject>[] = [];
+
+  const apiKey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
+  if (!apiKey) {
+    console.error("API key to access classification model is invalid.");
+    return res.status(500).send("Internal Server Error");
+  }
+  for (const postDocPathAndImageURL of postDocPathAndImageURLsArray) {
+    classifyPostsPromisesArray.push(
+      classifyPosts(
+        postDocPathAndImageURL.postDocPath,
+        postDocPathAndImageURL.image_url,
+        modelAPIEndpoint,
+        apiKey
+      )
+    );
+  }
+
+  const classifyPostsPromisesResultArray = await Promise.all(
+    classifyPostsPromisesArray
+  );
+
+  // Preparing postThemes/postThemes's postThemesArray array.
+  const postThemesArray: PostThemeObject[] = [];
+  for (const classifyPostsPromiseResult of classifyPostsPromisesResultArray) {
+    if (classifyPostsPromiseResult === false) {
+      // Here means there was a problem on classifying...
+      continue;
+    }
+
+    postThemesArray.push(classifyPostsPromiseResult);
+  }
+
+  // Update postThemes/postThemes's postThemes array.
+  try {
+    await firestore
+      .doc(`/users/${operationFromUsername}/postThemes/postThemes`)
+      .set({
+        postThemesArray: [...postThemesArray],
+      });
+  } catch (error) {
+    console.error("Error on updating postThemesArray on firestore: \n", error);
+    return res.status(500).send("Internal Server Error");
+  }
+
+  // Update status of bill doc...
+  try {
+    await activeBillDoc.ref.update({
+      active: false,
+    });
+  } catch (error) {
+    console.error(
+      "Error on updating 'activeBill' doc while changing 'active' field to 'false': \n",
+      error
+    );
+    return res.status(500).send("Internal Server Error");
+  }
+
+  return res.status(200).send("Suceess.");
 }
 
 const getImageURLOfPost = async (postDocPath: string) => {
@@ -190,6 +281,65 @@ const getImageURLOfPost = async (postDocPath: string) => {
     };
   } catch (error) {
     console.error("Error on fetching to 'providePostInformation': \n", error);
+    return false;
+  }
+};
+
+/**
+ * Classifiy posts and creates a valid postThemeObject.
+ * @param postDocPath
+ * @param image_url
+ * @param classifyEndpoint
+ * @param apiKey
+ * @returns
+ */
+const classifyPosts = async (
+  postDocPath: string,
+  image_url: string,
+  classifyEndpoint: string,
+  apiKey: string
+) => {
+  try {
+    const response = await fetch(classifyEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        APIKEY: apiKey,
+      },
+      body: JSON.stringify({
+        image_url: image_url,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(
+        "Response from classify image API of provider is not okay:: \n",
+        await response.text()
+      );
+      return false;
+    }
+
+    const result = await response.json();
+    const predictions = result["Combined Predictions"] as {
+      label: string;
+      score: number;
+    }[];
+
+    const themes: string[] = [];
+
+    predictions.forEach((a, i) => {
+      themes.push(a.label);
+    });
+
+    const postThemeObject: PostThemeObject = {
+      postDocPath: postDocPath,
+      themes: themes,
+      ts: Date.now(),
+    };
+
+    return postThemeObject;
+  } catch (error) {
+    console.error("Error on classifiying post: \n", error);
     return false;
   }
 };
