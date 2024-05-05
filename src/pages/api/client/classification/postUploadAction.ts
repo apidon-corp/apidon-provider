@@ -151,7 +151,6 @@ export default async function handler(
           themesArray: fieldValue.arrayUnion(...themesArray),
         });
     } catch (error) {
-      console.log(error);
       console.error("Error on updation themes doc", error);
       return res
         .status(500)

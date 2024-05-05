@@ -1,25 +1,7 @@
-import { auth, firestore } from "@/firebase/clientApp";
-import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
-
-import { UserInServer } from "@/types/User";
-
-import {
-  User,
-  UserCredential,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-import {
-  DocumentData,
-  DocumentSnapshot,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import { useRecoilState } from "recoil";
+import { auth } from "@/firebase/clientApp";
+import { UserCredential, signInWithEmailAndPassword } from "firebase/auth";
 
 export default function useLogin() {
-  const [currentUserState, setCurrentUserState] =
-    useRecoilState(currentUserStateAtom);
-
   /**
    * Direcly affects auth object.
    * @param email

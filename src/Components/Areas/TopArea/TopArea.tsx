@@ -1,5 +1,4 @@
-import { Button, Flex } from "@chakra-ui/react";
-import React from "react";
+import { Flex } from "@chakra-ui/react";
 import ImageArea from "./ImageArea";
 import NameArea from "./NameArea";
 

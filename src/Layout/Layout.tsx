@@ -16,7 +16,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useRecoilState, useSetRecoilState } from "recoil";
 
 type Props = {
-  children: ReactNode;
+  readonly children: ReactNode;
 };
 
 export default function Layout({ children }: Props) {

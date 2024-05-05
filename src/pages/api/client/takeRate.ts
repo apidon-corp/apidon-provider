@@ -51,7 +51,7 @@ export default async function handler(
 
   const scoreUserGaveBefore = clientDoc.data()?.score;
 
-  const hasUserGivenScoreBefore: boolean = scoreUserGaveBefore ? true : false;
+  const hasUserGivenScoreBefore = scoreUserGaveBefore !== undefined;
 
   // update client doc
   try {

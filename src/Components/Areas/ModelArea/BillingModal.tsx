@@ -88,7 +88,7 @@ export default function BillingModal() {
       integrationStarted: false,
     });
 
-  const [modelUploadSettingsState, setModelUplaodSettingsState] =
+  const [modelUploadSettingsState, setModelUploadSettingsState] =
     useState<TempModelSettings>(TempModelSettingsPlaceholder);
   const modelInputRef = useRef<HTMLInputElement>(null);
 
@@ -206,13 +206,13 @@ export default function BillingModal() {
         defaultExtension = "h5";
       }
 
-      setModelUplaodSettingsState((prev) => ({
+      setModelUploadSettingsState((prev) => ({
         ...prev,
         [event.target.id]: event.target.value,
         modelExtension: defaultExtension,
       }));
     } else {
-      setModelUplaodSettingsState((prev) => ({
+      setModelUploadSettingsState((prev) => ({
         ...prev,
         [event.target.id]: event.target.value,
       }));
@@ -226,7 +226,7 @@ export default function BillingModal() {
 
     const modelFileFromInput = event.target.files[0];
 
-    setModelUplaodSettingsState((prev) => ({
+    setModelUploadSettingsState((prev) => ({
       ...prev,
       modelFile: modelFileFromInput,
     }));
@@ -269,7 +269,7 @@ export default function BillingModal() {
           setModelUploadProgress(progress);
         },
         (error) => {
-          console.error("Error on uploading model file to storage: "), error;
+          console.error("Error on uploading model file to storage: ", error);
         },
         () => {
           console.log("Upload successfull");
@@ -508,9 +508,7 @@ export default function BillingModal() {
         />
         <ModalBody display="flex">
           {billingModalViewState === "initialLoading" && (
-            <>
-              <Spinner color="gray.500" width="50pt" height="50pt" />
-            </>
+            <Spinner color="gray.500" width="50pt" height="50pt" />
           )}
 
           {billingModalViewState === "uploadModel" && (

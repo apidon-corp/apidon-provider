@@ -1,8 +1,8 @@
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import useSetOffer from "@/hooks/economyHooks/useSetOffer";
-import { Button, Flex, Input, Text, useEditable } from "@chakra-ui/react";
+import { Button, Flex, Input, Text } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
 
 export default function AmountArea() {
   const [currentUserState, setCurrentUserState] =
@@ -36,7 +36,7 @@ export default function AmountArea() {
 
     if (
       susCandicateOffer[susCandicateOffer.length - 1] === "." &&
-      !(susCandicateOffer.split(".").length > 2)
+      susCandicateOffer.split(".").length <= 2
     ) {
       return setCandicateOfferInput(susCandicateOffer);
     }

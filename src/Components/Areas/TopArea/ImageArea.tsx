@@ -8,7 +8,7 @@ import { useRecoilState } from "recoil";
 export default function ImageArea() {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const [candicatedImage, setCandicateImage] = useState("");
+  const [candidateImage, setCandidateImage] = useState("");
 
   const [newlySettedImage, setNewlySettedImage] = useState("");
 
@@ -36,24 +36,24 @@ export default function ImageArea() {
     reader.readAsDataURL(file);
 
     reader.onload = (readerEvent) => {
-      setCandicateImage(readerEvent.target?.result as string);
+      setCandidateImage(readerEvent.target?.result as string);
     };
   };
 
   const handleCancelButton = () => {
-    setCandicateImage("");
+    setCandidateImage("");
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const handleSaveButton = async () => {
     setSaveImageButtonLoading(true);
 
-    const operationResult = await handleUploadImage(candicatedImage);
+    const operationResult = await handleUploadImage(candidateImage);
 
     if (operationResult) {
       setCurrentUserState((prev) => ({ ...prev, image: operationResult }));
-      setNewlySettedImage(candicatedImage);
-      setCandicateImage("");
+      setNewlySettedImage(candidateImage);
+      setCandidateImage("");
       if (imageInputRef.current) imageInputRef.current.value = "";
     }
 
@@ -69,16 +69,10 @@ export default function ImageArea() {
       gap="2"
     >
       <Image
-        src={
-          candicatedImage
-            ? candicatedImage
-            : newlySettedImage
-            ? newlySettedImage
-            : currentUserState.image
-        }
+        src={candidateImage || newlySettedImage || currentUserState.image || ""}
         fallback={
           <>
-            {candicatedImage || currentUserState.image || newlySettedImage ? (
+            {candidateImage || currentUserState.image || newlySettedImage ? (
               <SkeletonCircle width="20vh" height="20vh" />
             ) : (
               <Icon as={FaRegUserCircle} width="20vh" height="20vh" />
@@ -89,7 +83,7 @@ export default function ImageArea() {
         width="20vh"
         height="20vh"
       />
-      {candicatedImage ? (
+      {candidateImage ? (
         <Flex gap="1">
           <Button
             variant="solid"

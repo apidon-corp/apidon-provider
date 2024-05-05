@@ -5,7 +5,7 @@ import { ModelSettings } from "@/types/Model";
 import { Button, Flex, Spinner, Text } from "@chakra-ui/react";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
 import BillingModal from "./BillingModal";
 
 export default function AlgorithmArea() {

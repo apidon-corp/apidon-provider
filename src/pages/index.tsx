@@ -29,13 +29,11 @@ export default function Home() {
         </Flex>
       )}
       {!currentUserState.isThereCurrentUser && (
-        <>
-          <Flex>
-            <Text color="white" fontSize="15pt">
-              There is no active user
-            </Text>
-          </Flex>
-        </>
+        <Flex>
+          <Text color="white" fontSize="15pt">
+            There is no active user
+          </Text>
+        </Flex>
       )}
     </>
   );

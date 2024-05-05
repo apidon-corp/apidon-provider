@@ -101,8 +101,6 @@ export default function LogInModal() {
       const usernameRegex = /^[a-z0-9]{4,20}$/;
       const regexTestResult = usernameRegex.test(input);
       setEuValid(regexTestResult);
-
-      return;
     }
   };
 

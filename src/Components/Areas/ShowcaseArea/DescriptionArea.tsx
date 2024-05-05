@@ -1,7 +1,7 @@
 import { currentUserStateAtom } from "@/atoms/currentUserStateAtom";
 import useSetDescription from "@/hooks/personalizationHooks/useSetDescription";
-import { Button, Flex, Input, Text, Textarea } from "@chakra-ui/react";
-import React, { ChangeEvent, useEffect, useState } from "react";
+import { Button, Flex, Input, Text } from "@chakra-ui/react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 
 export default function DescriptionArea() {

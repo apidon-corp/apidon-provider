@@ -57,8 +57,6 @@ export default async function handler(
 
   const oneDay = 24 * 60 * 60 * 1000;
 
-  const fiveMinutes = 60 * 5 * 1000;
-
   const dealResultObject: IDealResult = {
     name: provider,
     startTime: startTime,

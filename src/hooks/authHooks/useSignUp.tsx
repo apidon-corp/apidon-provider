@@ -44,8 +44,6 @@ export default function useSignUp() {
       console.error("Error from signUp API", await response.text());
       return false;
     }
-    
-    const { createdProviderInformation } = await response.json();
 
     return true;
   };

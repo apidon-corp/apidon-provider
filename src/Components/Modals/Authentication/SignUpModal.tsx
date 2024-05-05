@@ -62,7 +62,7 @@ export default function SignUpModal() {
   });
 
   const usernameInputRef = useRef<HTMLInputElement>(null);
-  const [isUsenameValid, setIsUsernameValid] = useState(false);
+  const [isUsernameValid, setIsUsernameValid] = useState(false);
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
 
@@ -976,7 +976,7 @@ export default function SignUpModal() {
                   <InputGroup id="username">
                     <FormControl variant="floating">
                       <Input
-                        isInvalid={username.length !== 0 && !isUsenameValid}
+                        isInvalid={username.length !== 0 && !isUsernameValid}
                         type="text"
                         ref={usernameInputRef}
                         required
@@ -1006,7 +1006,7 @@ export default function SignUpModal() {
                       </FormLabel>
                     </FormControl>
                     <InputRightElement>
-                      {!isUsenameValid && username.length !== 0 && (
+                      {!isUsernameValid && username.length !== 0 && (
                         <Icon as={BiError} fontSize="20px" color="red" />
                       )}
                     </InputRightElement>
@@ -1034,7 +1034,7 @@ export default function SignUpModal() {
                       border: "1px solid #343434",
                     }}
                     isDisabled={
-                      !isEmailValid || !isPasswordValid || !isUsenameValid
+                      !isEmailValid || !isPasswordValid || !isUsernameValid
                     }
                     type="submit"
                   >
