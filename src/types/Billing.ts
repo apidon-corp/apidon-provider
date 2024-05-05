@@ -22,6 +22,10 @@ export type CheckPaymentRuleAPIResponse = {
     integrationStarted: boolean;
   };
   thereIsNoActivePaymentRule: boolean;
+  /**
+   * If user uploaded file to the system.
+   */
+  areThereTempModelFiles: boolean;
 };
 
 export type CalculateBillAPIReponse = {

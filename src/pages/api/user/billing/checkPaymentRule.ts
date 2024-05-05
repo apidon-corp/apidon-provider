@@ -40,10 +40,37 @@ export default async function handler(
   }
 
   if (activeBillDocCollection.empty) {
-    response = {
-      thereIsNoActivePaymentRule: true,
-    };
-    return res.status(200).json(response);
+    // We need to check if user uploaded model file.
+    try {
+      const modelSettingsTempSnapshot = await firestore
+        .doc(`/users/${operationFromUsername}/modelSettings/modelSettingsTemp`)
+        .get();
+      if (!modelSettingsTempSnapshot.exists) {
+        response = {
+          thereIsNoActivePaymentRule: true,
+          areThereTempModelFiles: false,
+        };
+        return res.status(200).json(response);
+      }
+
+      const modelSettingsTempData = modelSettingsTempSnapshot.data();
+      if (modelSettingsTempData === undefined) {
+        console.error("Model Settings Temp Data is undefined.");
+        return res.status(500).send("Internal Server Error");
+      }
+
+      response = {
+        areThereTempModelFiles: true,
+        thereIsNoActivePaymentRule: true,
+      };
+      return res.status(200).json(response);
+    } catch (error) {
+      console.error(
+        "Error on checking if user uploaded model before: \n",
+        error
+      );
+      return res.status(500).send("Internal Server Error");
+    }
   }
 
   if (activeBillDocCollection.docs.length !== 1) {
@@ -87,6 +114,7 @@ export default async function handler(
       price: price,
       integrationStarted: integrationStarted,
     },
+    areThereTempModelFiles: true,
   };
 
   return res.status(200).json(response);
