@@ -220,30 +220,22 @@ export default async function handler(
     console.error("API key to access classification model is invalid.");
     return res.status(500).send("Internal Server Error");
   }
-  for (const postDocPathAndImageURL of postDocPathAndImageURLsArray) {
-    classifyPostsPromisesArray.push(
-      classifyPosts(
-        postDocPathAndImageURL.postDocPath,
-        postDocPathAndImageURL.image_url,
-        modelAPIEndpoint,
-        apiKey
-      )
-    );
-  }
 
-  const classifyPostsPromisesResultArray = await Promise.all(
-    classifyPostsPromisesArray
-  );
-
-  // Preparing postThemes/postThemes's postThemesArray array.
   const postThemesArray: PostThemeObject[] = [];
-  for (const classifyPostsPromiseResult of classifyPostsPromisesResultArray) {
-    if (classifyPostsPromiseResult === false) {
-      // Here means there was a problem on classifying...
+  for (const postDocPathAndImageURL of postDocPathAndImageURLsArray) {
+    const classifyResult = await classifyPosts(
+      postDocPathAndImageURL.postDocPath,
+      postDocPathAndImageURL.image_url,
+      modelAPIEndpoint,
+      apiKey
+    );
+
+    if (!classifyResult) {
       continue;
     }
-
-    postThemesArray.push(classifyPostsPromiseResult);
+    
+    // Preparing postThemes/postThemes's postThemesArray array.
+    postThemesArray.push(classifyResult);
   }
 
   // Update postThemes/postThemes's postThemes array.
