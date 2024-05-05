@@ -7,6 +7,7 @@ import {
 } from "@/types/Billing";
 import {
   Button,
+  CircularProgress,
   Flex,
   FormControl,
   FormLabel,
@@ -20,21 +21,25 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Select,
   Spinner,
   Text,
 } from "@chakra-ui/react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { ChangeEvent, useEffect, useRef, useState } from "react";
 import { AiOutlineCheckCircle } from "react-icons/ai";
 import { useRecoilState } from "recoil";
 
+import { auth, ref, storage } from "@/firebase/clientApp";
+import {
+  ModelSettings,
+  TempModelSettings,
+  TempModelSettingsPlaceholder,
+} from "@/types/Model";
 import { ethers } from "ethers";
+import { getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { BiError } from "react-icons/bi";
 
-type Props = {
-  handleIntegrateModel: () => Promise<void>;
-};
-
-export default function BillingModal({ handleIntegrateModel }: Props) {
+export default function BillingModal() {
   const [billingModalState, setBillingModalState] = useRecoilState(
     billingModalStatusAtom
   );
@@ -63,11 +68,13 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
 
   const [billingModalViewState, setBillingModalViewState] = useState<
     | "initialLoading"
+    | "uploadModel"
+    | "uploadingModel"
     | "calculateBill"
     | "verifyingPayment"
-    | "paymentVerified"
     | "paymentCancelling"
-    | "modelIntegrating"
+    | "integrateModel"
+    | "integratingModel"
   >("initialLoading");
 
   const [createdPaymentRuleState, setCreatedPaymentRuleState] =
@@ -81,22 +88,34 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
       integrationStarted: false,
     });
 
+  const [modelUploadSettingsState, setModelUplaodSettingsState] =
+    useState<TempModelSettings>(TempModelSettingsPlaceholder);
+  const modelInputRef = useRef<HTMLInputElement>(null);
+
+  const [modelUploadProgress, setModelUploadProgress] = useState(0);
+
+  // Initial Checking
   useEffect(() => {
     checkInitialStatus();
   }, [billingModalState.isOpen]);
 
+  // Open billing model if payment verified at start
   useEffect(() => {
     if (
-      billingModalViewState === "verifyingPayment" ||
-      billingModalViewState === "paymentVerified"
+      !(
+        billingModalViewState === "initialLoading" ||
+        billingModalViewState === "uploadModel"
+      )
     )
       setBillingModalState({ isOpen: true });
   }, [billingModalViewState]);
 
+  // Check initial status when state changes to initial loading
   useEffect(() => {
     if (billingModalViewState === "initialLoading") checkInitialStatus();
   }, [billingModalViewState]);
 
+  // Check payment status for every ten seconds.
   useEffect(() => {
     if (billingModalViewState !== "verifyingPayment") return;
     const seconds = 1000;
@@ -105,6 +124,14 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
   }, [billingModalViewState]);
 
   const checkInitialStatus = async () => {
+    /**
+     * Check if there is an active payment rule.
+     * If there is not payment rule, check model upload status.
+     * If there is no model upload, open model upload panel.
+     * If there is a model uploaded, open create payment rule panel.
+     * If user wants to go back, delete temp files on firebase.
+     * If user made payment, open integrate panel.
+     */
     setBillingModalViewState("initialLoading");
 
     const operationResult = await checkPaymentRuleStatus();
@@ -116,24 +143,29 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
       return;
     }
 
-    // I put '!operationResult.activePaymentRuleData' to make TypeScript comfortable.
+    // Putting '!operationResult.activePaymentRuleData' to make TypeScript comfortable.
     if (
       operationResult.thereIsNoActivePaymentRule ||
       !operationResult.activePaymentRuleData
     ) {
-      // Calculate Bill
-      const calculatedBillResult = await handleCalculateBill();
+      if (operationResult.areThereTempModelFiles) {
+        // Calculate Bill
+        const calculatedBillResult = await handleCalculateBill();
 
-      if (!calculatedBillResult) {
-        console.log(
-          "Calculate bill result is false from 'calculateBill' hook."
-        );
-        return setBillingModalViewState("initialLoading");
+        if (!calculatedBillResult) {
+          console.log(
+            "Calculate bill result is false from 'calculateBill' hook."
+          );
+          return setBillingModalViewState("initialLoading");
+        }
+
+        setCalculatedBill(calculatedBillResult);
+
+        return setBillingModalViewState("calculateBill");
+      } else {
+        // Open upload model panel.
+        return setBillingModalViewState("uploadModel");
       }
-
-      setCalculatedBill(calculatedBillResult);
-
-      return setBillingModalViewState("calculateBill");
     }
 
     setCreatedPaymentRuleState({
@@ -154,9 +186,148 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
     if (operationResult.activePaymentRuleData.occured) {
       // Show status of payment rule and show 'finish model changes!' button. and we convert active field to false.
       if (!operationResult.activePaymentRuleData.integrationStarted)
-        return setBillingModalViewState("paymentVerified");
+        return setBillingModalViewState("integrateModel");
       if (operationResult.activePaymentRuleData.integrationStarted)
-        return setBillingModalViewState("modelIntegrating");
+        return setBillingModalViewState("integratingModel");
+    }
+  };
+
+  const handleSelection = async (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    if (event.target.id === "modelEnvironment") {
+      // We need to set default extension if "modelEnvironment" changed.
+      let defaultExtension: "h5" | "pt" = "h5";
+      if (event.target.value === "tensorflow") {
+        defaultExtension = "h5";
+      } else if (event.target.value === "pytorch") {
+        defaultExtension = "pt";
+      } else if (event.target.value === "keras") {
+        defaultExtension = "h5";
+      }
+
+      setModelUplaodSettingsState((prev) => ({
+        ...prev,
+        [event.target.id]: event.target.value,
+        modelExtension: defaultExtension,
+      }));
+    } else {
+      setModelUplaodSettingsState((prev) => ({
+        ...prev,
+        [event.target.id]: event.target.value,
+      }));
+    }
+  };
+
+  const handleModelFileChange = async (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!event.target.files) return;
+
+    const modelFileFromInput = event.target.files[0];
+
+    setModelUplaodSettingsState((prev) => ({
+      ...prev,
+      modelFile: modelFileFromInput,
+    }));
+  };
+
+  const handleUploadButton = async () => {
+    setBillingModalViewState("uploadingModel");
+    setModelUploadProgress(0);
+
+    if (!modelUploadSettingsState.modelFile) {
+      console.error("There is no file choosen.");
+      return setBillingModalViewState("uploadModel");
+    }
+
+    // Uploading model to Firebase Storage, temporarily.
+    let modelURL;
+    try {
+      const authObject = auth.currentUser;
+      if (authObject === null) {
+        console.error("There is no user for operation.");
+        return setBillingModalViewState("uploadModel");
+      }
+
+      const storageRef = ref(
+        storage,
+        `/users/${authObject.displayName}/model/temp/model.${modelUploadSettingsState.modelExtension}`
+      );
+
+      const uploadTask = uploadBytesResumable(
+        storageRef,
+        modelUploadSettingsState.modelFile
+      );
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+
+          setModelUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Error on uploading model file to storage: "), error;
+        },
+        () => {
+          console.log("Upload successfull");
+        }
+      );
+
+      await uploadTask;
+
+      const modelURLFetched = await getDownloadURL(storageRef);
+
+      modelURL = modelURLFetched;
+    } catch (error) {
+      console.error("Error on uploading model file temporarily: \n", error);
+      return setBillingModalViewState("uploadModel");
+    }
+
+    // Update Firestore "temp" doc.
+    try {
+      const authObject = auth.currentUser;
+      if (authObject === null) {
+        console.error("There is no user for operation.");
+        return setBillingModalViewState("uploadModel");
+      }
+      const idToken = await authObject.getIdToken();
+      if (idToken === undefined) {
+        console.error("IdToken is undefined.");
+        return setBillingModalViewState("uploadModel");
+      }
+
+      const body: ModelSettings = {
+        modelPath: modelURL,
+        inputImageSizes: modelUploadSettingsState.inputImageSizes,
+        modelEnvironment: modelUploadSettingsState.modelEnvironment,
+        modelExtension: modelUploadSettingsState.modelExtension,
+      };
+
+      const response = await fetch("api/user/model/uploadModel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ ...body }),
+      });
+
+      if (!response.ok) {
+        console.error(
+          "Response from 'uploadModel' is not okay: \n",
+          await response.text()
+        );
+        return setBillingModalViewState("uploadModel");
+      }
+
+      // Everthing alright...
+      return setBillingModalViewState("initialLoading");
+    } catch (error) {
+      console.error("Error on fetching uploadModelAPI: \n", error);
+      return setBillingModalViewState("uploadModel");
     }
   };
 
@@ -260,15 +431,44 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
   };
 
   const handleIntegrateModelButton = async () => {
-    setBillingModalViewState("modelIntegrating");
-    console.log("Integration started from -billingmodal");
-    await handleIntegrateModel();
-    console.log("Integration finished from -billingmodal");
+    setBillingModalViewState("integratingModel");
 
-    setBillingModalViewState("initialLoading");
-    setBillingModalState({
-      isOpen: false,
-    });
+    const authObject = auth.currentUser;
+    if (authObject === null) {
+      console.error("There is no user for operation.");
+      return setBillingModalViewState("integrateModel");
+    }
+
+    const idToken = await authObject.getIdToken();
+    if (idToken === undefined) {
+      console.error("IdToken is undefined.");
+      return setBillingModalViewState("integrateModel");
+    }
+
+    try {
+      const response = await fetch("api/user/model/integrateModel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.error(
+          "Response from 'integrateModel' is not okay: \n",
+          await response.text()
+        );
+        return setBillingModalViewState("integrateModel");
+      }
+
+      // Everthing is alright...
+      setBillingModalViewState("initialLoading");
+      return setBillingModalState({ isOpen: false });
+    } catch (error) {
+      console.error("Error on fetching integrateModelAPI: \n", error);
+      return setBillingModalViewState("integrateModel");
+    }
   };
 
   return (
@@ -282,12 +482,7 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
       }}
       isOpen={billingModalState.isOpen}
       onClose={() => {
-        if (
-          billingModalViewState === "paymentCancelling" ||
-          billingModalViewState === "verifyingPayment" ||
-          billingModalViewState === "paymentVerified"
-        )
-          return;
+        if (billingModalViewState !== "uploadModel") return;
         setBillingModalState({ isOpen: false });
       }}
       autoFocus={false}
@@ -300,20 +495,234 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
           lg: "500px",
         }}
       >
-        <ModalHeader color="white">Billing Panel</ModalHeader>
+        {billingModalViewState === "uploadModel" ||
+        billingModalViewState === "uploadingModel" ? (
+          <ModalHeader color="white">Upload Model</ModalHeader>
+        ) : (
+          <ModalHeader color="white">Billing Panel</ModalHeader>
+        )}
+
         <ModalCloseButton
           color="white"
-          hidden={
-            billingModalViewState === "paymentCancelling" ||
-            billingModalViewState === "verifyingPayment" ||
-            billingModalViewState === "paymentVerified"
-          }
+          hidden={billingModalViewState !== "uploadModel"}
         />
         <ModalBody display="flex">
           {billingModalViewState === "initialLoading" && (
             <>
               <Spinner color="gray.500" width="50pt" height="50pt" />
             </>
+          )}
+
+          {billingModalViewState === "uploadModel" && (
+            <Flex
+              id="uploadModel-flex"
+              direction="column"
+              gap="10px"
+              width="100%"
+            >
+              <Flex
+                direction="column"
+                gap="5"
+                width="100%"
+                justify="center"
+                align="center"
+              >
+                <Flex
+                  id="Model-Settings"
+                  direction="column"
+                  gap="5px"
+                  width="100%"
+                >
+                  <Flex
+                    id="model-environemt"
+                    direction="column"
+                    bg="black"
+                    borderRadius="10px"
+                    p="4"
+                    width="100%"
+                  >
+                    <Text color="gray.700" fontWeight="500" fontSize="12pt">
+                      Model Environment
+                    </Text>
+                    <Select
+                      id="modelEnvironment"
+                      onChange={handleSelection}
+                      value={modelUploadSettingsState.modelEnvironment}
+                      iconColor="white"
+                      sx={{
+                        backgroundColor: "black",
+                        textColor: "#D69E2E",
+                        fontWeight: "700",
+                        fontSize: "16pt",
+                        borderWidth: "0px",
+                        paddingLeft: 0,
+                      }}
+                    >
+                      <option value="tensorflow">TensorFlow</option>
+                      <option value="pytorch">PyTorch</option>
+                      <option value="keras">Keras</option>
+                    </Select>
+                  </Flex>
+                  <Flex
+                    id="input-imagesize"
+                    direction="column"
+                    bg="black"
+                    borderRadius="10px"
+                    p="4"
+                    width="100%"
+                  >
+                    <Text color="gray.700" fontWeight="500" fontSize="12pt">
+                      Input Image Sizes
+                    </Text>
+                    <Select
+                      id="inputImageSizes"
+                      onChange={handleSelection}
+                      value={modelUploadSettingsState.inputImageSizes}
+                      iconColor="white"
+                      sx={{
+                        backgroundColor: "black",
+                        textColor: "#00B5D8",
+                        fontWeight: "700",
+                        fontSize: "16pt",
+                        borderWidth: "0px",
+                        paddingLeft: 0,
+                      }}
+                    >
+                      <option value="64x64">64 x 64</option>
+                      <option value="120x120">120 x 120</option>
+                      <option value="224x224">224 x 224</option>
+                      <option value="299x299">299 x 299</option>
+                      <option value="331x331">331 x 331</option>
+                      <option value="512x512">512 x 512</option>
+                    </Select>
+                  </Flex>
+                  <Flex
+                    id="model-extension"
+                    direction="column"
+                    bg="black"
+                    borderRadius="10px"
+                    p="4"
+                    width="100%"
+                  >
+                    <Text color="gray.700" fontWeight="500" fontSize="12pt">
+                      Model Extension
+                    </Text>
+                    <Select
+                      id="modelExtension"
+                      onChange={handleSelection}
+                      value={modelUploadSettingsState.modelExtension}
+                      iconColor="white"
+                      sx={{
+                        backgroundColor: "black",
+                        textColor: "#805AD5",
+                        fontWeight: "700",
+                        fontSize: "16pt",
+                        borderWidth: "0px",
+                        paddingLeft: 0,
+                      }}
+                    >
+                      {modelUploadSettingsState.modelEnvironment ===
+                        "tensorflow" && (
+                        <>
+                          <option value="h5">.h5</option>
+                          <option value="tflite">.tflite</option>
+                        </>
+                      )}
+                      {modelUploadSettingsState.modelEnvironment ===
+                        "keras" && <option value="h5">.h5</option>}
+                      {modelUploadSettingsState.modelEnvironment ===
+                        "pytorch" && (
+                        <>
+                          <option value="pt">.pt</option>
+                          <option value="pth">.pth</option>
+                        </>
+                      )}
+                    </Select>
+                  </Flex>
+                  <Flex
+                    id="model-environemt"
+                    direction="column"
+                    bg="black"
+                    borderRadius="10px"
+                    p="4"
+                    width="100%"
+                  >
+                    <Flex align="center" gap="2">
+                      <Text color="gray.700" fontWeight="500" fontSize="12pt">
+                        Model File
+                      </Text>
+                      <Button
+                        variant="outline"
+                        colorScheme="blue"
+                        size="xs"
+                        onClick={() => {
+                          if (modelInputRef.current)
+                            modelInputRef.current.click();
+                        }}
+                      >
+                        Choose New Model
+                      </Button>
+                    </Flex>
+
+                    <Text
+                      color="pink.500"
+                      fontWeight="700"
+                      fontSize="16pt"
+                      maxWidth="15em"
+                      isTruncated
+                    >
+                      {modelUploadSettingsState.modelFile
+                        ? modelUploadSettingsState.modelFile.name
+                        : "Choose a file."}
+                    </Text>
+
+                    <Input
+                      ref={modelInputRef}
+                      onChange={handleModelFileChange}
+                      type="file"
+                      accept={`.${modelUploadSettingsState.modelExtension}`}
+                      hidden
+                    />
+                  </Flex>
+                </Flex>
+                <Flex justify="center" align="center" gap="2">
+                  <Button
+                    variant="outline"
+                    colorScheme="blue"
+                    size="md"
+                    onClick={handleUploadButton}
+                    isDisabled={!modelUploadSettingsState.modelFile}
+                  >
+                    Upload
+                  </Button>
+                </Flex>
+              </Flex>
+            </Flex>
+          )}
+
+          {billingModalViewState === "uploadingModel" && (
+            <Flex
+              width="100%"
+              id="uploading-model-flex"
+              direction="column"
+              gap="20px"
+              align="center"
+              justify="center"
+            >
+              <CircularProgress
+                isIndeterminate={
+                  modelUploadProgress === 0 || modelUploadProgress === 100
+                }
+                color="teal"
+                size="55pt"
+                value={modelUploadProgress}
+                alignContent="center"
+                justifyContent="center"
+              />
+              <Text color="white" fontSize="15pt" fontWeight="700">
+                Uploading Model
+              </Text>
+            </Flex>
           )}
 
           {billingModalViewState === "calculateBill" && (
@@ -410,8 +819,8 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
                 </Text>
                 <Flex id="payer-address-part" direction="column" gap="15px">
                   <Text color="yellow.600" fontSize="8pt" fontWeight="600">
-                    Plesae provide a &ldquo;payer&ldquo; address. Note that, you can only
-                    make payment with the address you will provide.
+                    Plesae provide a &ldquo;payer&ldquo; address. Note that, you
+                    can only make payment with the address you will provide.
                   </Text>
                   <InputGroup>
                     <FormControl variant="floating">
@@ -561,8 +970,12 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
             </Flex>
           )}
 
-          {billingModalViewState === "paymentVerified" && (
-            <Flex id="paymentVerified-flex" direction="column" gap="10px">
+          {billingModalViewState === "integrateModel" && (
+            <Flex
+              id="paymentVerified-integrateModel-flex"
+              direction="column"
+              gap="10px"
+            >
               <Text color="white" fontSize="15pt" fontWeight="700">
                 Integrate Model
               </Text>
@@ -616,7 +1029,7 @@ export default function BillingModal({ handleIntegrateModel }: Props) {
             </Flex>
           )}
 
-          {billingModalViewState == "modelIntegrating" && (
+          {billingModalViewState == "integratingModel" && (
             <Flex
               id="model-integrating-flex"
               direction="column"

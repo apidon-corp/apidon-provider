@@ -1,5 +1,5 @@
 import getDisplayName from "@/apiUtils";
-import { firestore } from "@/firebase/adminApp";
+import { bucket, firestore } from "@/firebase/adminApp";
 import { Post, PostThemeObject } from "@/types/Classification";
 import { ModelSettings, ModelSettingsServer } from "@/types/Model";
 import { NextApiRequest, NextApiResponse } from "next";
@@ -14,14 +14,9 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { authorization } = req.headers;
-  const { inputImageSizes, modelEnvironment, modelExtension, modelPath } =
-    req.body as ModelSettings;
 
   const operationFromUsername = await getDisplayName(authorization as string);
   if (!operationFromUsername) return res.status(401).send("unauthorized");
-
-  if (!inputImageSizes || !modelEnvironment || !modelExtension || !modelPath)
-    return res.status(422).send("Invalid Prop or Props");
 
   // Updating integration status on bill doc...
   let activeBillDocCollection;
@@ -40,7 +35,6 @@ export default async function handler(
   }
 
   const activeBillDoc = activeBillDocCollection.docs[0];
-
   try {
     await activeBillDoc.ref.update({
       integrationStarted: true,
@@ -54,7 +48,58 @@ export default async function handler(
   }
 
   /**
-   * Creating API endpoint for this model.
+   * Getting temp data for integration.
+   */
+  let tempModelSettingsData: ModelSettings;
+  try {
+    const modelSettingsTempSnapshot = await firestore
+      .doc(`users/${operationFromUsername}/modelSettings/modelSettingsTemp`)
+      .get();
+    if (!modelSettingsTempSnapshot.exists) {
+      console.error(
+        "modelSettingsTemp doc doesn't exists in provider database."
+      );
+      return res.status(500).send("Internal Server Error");
+    }
+
+    const modelSettingsData = modelSettingsTempSnapshot.data();
+    if (modelSettingsData === undefined) {
+      console.error("modelSettingsTemp doc data is undefined.");
+      return res.status(500).send("Internal Server Error");
+    }
+    tempModelSettingsData = modelSettingsData as ModelSettings;
+  } catch (error) {
+    console.error("Error on getting modelSettingsTemp doc: \n", error);
+    return res.status(500).send("Internal Server Error");
+  }
+
+  /**
+   * Change location of temp file with real file.
+   */
+  let modelFileURL;
+  try {
+    const tempFile = bucket.file(
+      `users/${operationFromUsername}/model/temp/model.${tempModelSettingsData.modelExtension}`
+    );
+    await tempFile.move(
+      `users/${operationFromUsername}/model/model.${tempModelSettingsData.modelExtension}`
+    );
+
+    const movedFile = bucket.file(
+      `users/${operationFromUsername}/model/model.${tempModelSettingsData.modelExtension}`
+    );
+    await movedFile.makePublic();
+    modelFileURL = movedFile.publicUrl();
+  } catch (error) {
+    console.error(
+      "Error on moving temp model and creating new link for that file: \n",
+      error
+    );
+    return res.status(500).send("Internal Server Error");
+  }
+
+  /**
+   * Creating API endpoint for this model with new moved file.
    */
   let modelAPIEndpoint = "https://k.api.apidon.com/classify/tfclassify";
   try {
@@ -64,11 +109,11 @@ export default async function handler(
    * Updating Firestore modelSettings/modelSettings doc.
    */
   let modelSettingsServer: ModelSettingsServer = {
-    inputImageSizes: inputImageSizes,
+    inputImageSizes: tempModelSettingsData.inputImageSizes,
     modelAPIEndpoint: modelAPIEndpoint,
-    modelEnvironment: modelEnvironment,
-    modelExtension: modelExtension,
-    modelPath: modelPath,
+    modelEnvironment: tempModelSettingsData.modelEnvironment,
+    modelExtension: tempModelSettingsData.modelExtension,
+    modelPath: modelFileURL,
   };
   try {
     await firestore
@@ -223,6 +268,16 @@ export default async function handler(
       "Error on updating 'activeBill' doc while changing 'active' field to 'false': \n",
       error
     );
+    return res.status(500).send("Internal Server Error");
+  }
+
+  // Delete temp model settings doc
+  try {
+    await firestore
+      .doc(`/users/${operationFromUsername}/modelSettings/modelSettingsTemp`)
+      .delete();
+  } catch (error) {
+    console.error("Error on deleting temp model settings doc.");
     return res.status(500).send("Internal Server Error");
   }
 
