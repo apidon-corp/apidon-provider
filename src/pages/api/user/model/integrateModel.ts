@@ -6,7 +6,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 export const config = {
   runtime: "nodejs",
-  maxDuration: 120,
+  maxDuration: 300,
 };
 
 export default async function handler(
