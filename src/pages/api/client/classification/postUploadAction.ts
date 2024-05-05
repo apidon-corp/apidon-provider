@@ -1,5 +1,6 @@
 import { fieldValue, firestore } from "@/firebase/adminApp";
 import { Post, PostThemeObject, ThemeObject } from "@/types/Classification";
+import { ModelSettingsServer } from "@/types/Model";
 
 import AsyncLock from "async-lock";
 import { NextApiRequest, NextApiResponse } from "next";
@@ -57,17 +58,40 @@ export default async function handler(
      */
 
     let probabiltiesArray: { label: string; score: number }[] = [];
-    if (imageURL)
+    if (imageURL) {
       try {
-        const classifyEndpoint =
-          process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
-        if (!classifyEndpoint)
-          throw new Error(
-            "Classify Endpoint couldn't be fetch from .env file."
-          );
+        let classifyEndpoint;
+
+        const modelSettingsDocSnapshot = await firestore
+          .doc(`/users/${providerId}/modelSettings/modelSettings`)
+          .get();
+
+        if (!modelSettingsDocSnapshot.exists) {
+          console.error("Model Settings Doc doesn't exists.");
+          classifyEndpoint =
+            process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
+          if (!classifyEndpoint)
+            throw new Error(
+              "Classify Endpoint couldn't be fetch from .env file."
+            );
+        }
+
+        const modelSettingsData =
+          modelSettingsDocSnapshot.data() as ModelSettingsServer;
+
+        if (modelSettingsData === undefined) {
+          console.error("Model Settings Doc data is undefined.");
+          classifyEndpoint =
+            process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
+          if (!classifyEndpoint)
+            throw new Error(
+              "Classify Endpoint couldn't be fetch from .env file."
+            );
+        }
+
+        classifyEndpoint = modelSettingsData.modelAPIEndpoint;
 
         const apikey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
-
         if (!apikey) {
           throw new Error("Classify API KEY couldn't be fetch from .env file.");
         }
@@ -95,7 +119,7 @@ export default async function handler(
         console.error("Error while fetching to classify API (Python): ", error);
         return res.status(500).send("Internal Server Error");
       }
-    else {
+    } else {
       probabiltiesArray = [
         {
           label: "text",

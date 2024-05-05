@@ -101,7 +101,7 @@ export default async function handler(
   /**
    * Creating API endpoint for this model with new moved file.
    */
-  let modelAPIEndpoint = "https://k.api.apidon.com/classify/tfclassify";
+  let modelAPIEndpoint = process.env.PROVIDER_ONE_API_ENDPOINT as string;
   try {
   } catch (error) {}
 
