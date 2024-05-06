@@ -20,3 +20,11 @@ export type ThemeObject = {
   theme: string;
   ts: number;
 };
+
+/**
+ * Can be used for getting result from classifiton APIs.
+ */
+export type PostPredictionObject = {
+  label: string;
+  score: number;
+};

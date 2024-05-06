@@ -1,228 +1,264 @@
 import { fieldValue, firestore } from "@/firebase/adminApp";
-import { Post, PostThemeObject, ThemeObject } from "@/types/Classification";
+import {
+  Post,
+  PostPredictionObject,
+  PostThemeObject,
+  ThemeObject,
+} from "@/types/Classification";
 import { ModelSettingsServer } from "@/types/Model";
 
-import AsyncLock from "async-lock";
 import { NextApiRequest, NextApiResponse } from "next";
-
-const lock = new AsyncLock();
 
 export const config = {
   runtime: "nodejs",
   maxDuration: 120,
 };
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  /**
-   * To handle cors policy...
-   */
+/**
+ * Handling cors policy stuff.
+ * @param res
+ */
+function handlePreflightRequest(res: NextApiResponse) {
   res.setHeader(
     "Access-Control-Allow-Origin",
     process.env.NEXT_PUBLIC_ALLOW_CORS_ADDRESS as string
   );
-
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,authorization");
+  res.status(200).end();
+}
 
-  // Handle preflight OPTIONS request
-  if (req.method === "OPTIONS") {
-    // Respond with a 200 OK status code
-    res.status(200).end();
-    return;
+/**
+ * Getting unique classify endpoint.
+ * @param providerId
+ * @returns
+ */
+async function getClassifyEndpoint(providerId: string) {
+  try {
+    const modelSettingsDocSnapshot = await firestore
+      .doc(`/users/${providerId}/modelSettings/modelSettings`)
+      .get();
+    if (!modelSettingsDocSnapshot.exists) {
+      console.error("Model settings doc does not exist.");
+      return false;
+    }
+
+    const modelSettingsData =
+      modelSettingsDocSnapshot.data() as ModelSettingsServer;
+
+    if (modelSettingsData === undefined) {
+      console.error("Model settings data is undefined.");
+      return false;
+    }
+
+    return modelSettingsData.modelAPIEndpoint;
+  } catch (error) {
+    console.error("Error on getting classify point of provider: \n", error);
+    return false;
   }
+}
+
+/**
+ * Getting classification result from unique endpoints of providers.
+ * @param providerId
+ * @param imageURL
+ * @returns
+ */
+async function getClassifyResult(providerId: string, imageURL: string | null) {
+  const classifyEndpoint = await getClassifyEndpoint(providerId);
+  if (!classifyEndpoint) return false;
+
+  if (!imageURL) {
+    return [
+      {
+        label: "text",
+        score: 0,
+      },
+    ] as PostPredictionObject[];
+  }
+
+  const apikey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
+
+  if (!apikey) {
+    console.error("API key for classify is undefined.");
+    return false;
+  }
+
+  const response = await fetch(classifyEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      APIKEY: apikey,
+    },
+    body: JSON.stringify({
+      image_url: imageURL,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error(
+      `Response from Python Classify API for ${providerId} is not okay: \n`,
+      await response.text()
+    );
+    return false;
+  }
+
+  const result = await response.json();
+
+  return result["Combined Predictions"] as PostPredictionObject[];
+}
+
+/**
+ * Updating postThemes array on provider database.
+ * @param providerId
+ * @param postDocPath
+ * @param predictions
+ * @returns
+ */
+async function updatePostThemesArray(
+  providerId: string,
+  postDocPath: string,
+  imageURL: string | null
+) {
+  const predictions = await getClassifyResult(providerId, imageURL);
+  if (!predictions) return false;
+
+  const postThemeObject: PostThemeObject = {
+    postDocPath: postDocPath,
+    ts: Date.now(),
+    themes: predictions.map((prediction) => prediction.label),
+  };
+
+  try {
+    await firestore.doc(`/users/${providerId}/postThemes/postThemes`).update({
+      postThemesArray: fieldValue.arrayUnion({ ...postThemeObject }),
+    });
+    return true;
+  } catch (error) {
+    console.error(
+      `Error on updating postThemes array of provider: ${providerId} : \n`,
+      error
+    );
+    return false;
+  }
+}
+
+/**
+ * Updating client doc on provider database.
+ * @param providerId
+ * @param clientId
+ * @param clientStartTime
+ * @param predictions
+ */
+async function updateClientDoc(
+  providerId: string,
+  clientId: string,
+  clientStartTime: string,
+  imageURL: string | null
+) {
+  const predictions = await getClassifyResult(providerId, imageURL);
+  if (!predictions) return false;
+
+  const themeArrayObjectArray: ThemeObject[] = predictions.map(
+    (prediction) => ({ theme: prediction.label, ts: Date.now() })
+  );
+
+  try {
+    await firestore
+      .doc(`/users/${providerId}/clients/${clientId}-${clientStartTime}`)
+      .update({
+        themesArray: fieldValue.arrayUnion(...themeArrayObjectArray),
+      });
+    return true;
+  } catch (error) {
+    console.error(
+      `Error on updating client doc of provider: ${providerId} : \n`,
+      error
+    );
+    return false;
+  }
+}
+
+/**
+ * Updating general posts on provider database.
+ * @param postDocPath
+ * @returns
+ */
+async function updatePosts(postDocPath: string) {
+  const post: Post = {
+    postDocPath: postDocPath,
+    ts: Date.now(),
+  };
+
+  try {
+    await firestore.doc("posts/posts").update({
+      postsArray: fieldValue.arrayUnion({ ...post }),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error on updating postsArray on posts/posts doc: \n", error);
+    return false;
+  }
+}
+
+/**
+ * Gets active provider IDs.
+ * @returns
+ */
+async function getActiveProviderIDs() {
+  try {
+    const showcaseCollection = await firestore.collection("showcase").get();
+
+    if (showcaseCollection.empty) {
+      console.error("Showcase collection is empty.");
+      return false;
+    }
+
+    const providerIDs = showcaseCollection.docs.map((doc) => doc.id);
+    return providerIDs;
+  } catch (error) {
+    console.error("Error on getting active provider IDs: \n", error);
+    return false;
+  }
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method === "OPTIONS") return handlePreflightRequest(res);
 
   const { authorization } = req.headers;
   const { username, postDocPath, imageURL, providerId, startTime } = req.body;
 
   if (authorization !== process.env.API_KEY_BETWEEN_SERVICES)
-    return res.status(401).send("unauthorized");
+    return res.status(401).send("Unauthorized");
 
-  // But some posts doesn't have image...
   if (!username || !postDocPath || !providerId)
-    return res.status(422).send("Invalid Prop or Props.");
+    return res.status(422).send("Invalid Props");
 
-  /**
-   * We will do:
-   *  0-) Geting what image is about from API.
-   *  1-) Update providerId/clients/clientId doc's themesArray array that => He loves cat, dogs...
-   *  2-) Update providerId/postThemes/postThemes doc's postThemesArray array that => postId123 is about cat,dogs, pumas.
-   *  3-) Update posts/posts doc's postsArray array that => postDocPath and Timestamp
-   */
+  const activeProviderIDs = await getActiveProviderIDs();
+  if (!activeProviderIDs) return res.status(500).send("Internal Server Error");
 
-  await lock.acquire(`${username}`, async () => {
-    /**
-     * 0-) Geting what image is about from API.
-     * Sends imageURL to Classify Modal and gets results as an array.....
-     */
+  for (const providerId of activeProviderIDs) {
+    const result = await updatePostThemesArray(
+      providerId,
+      postDocPath,
+      imageURL
+    );
+    if (!result) return res.status(500).send("Internal Server Error");
+  }
 
-    let probabiltiesArray: { label: string; score: number }[] = [];
-    if (imageURL) {
-      try {
-        let classifyEndpoint;
+  const updateClientDocResult = await updateClientDoc(
+    providerId,
+    username,
+    startTime,
+    imageURL
+  );
+  if (!updateClientDocResult)
+    return res.status(500).send("Internal Server Error");
 
-        const modelSettingsDocSnapshot = await firestore
-          .doc(`/users/${providerId}/modelSettings/modelSettings`)
-          .get();
-
-        if (!modelSettingsDocSnapshot.exists) {
-          console.error("Model Settings Doc doesn't exists.");
-          classifyEndpoint =
-            process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
-          if (!classifyEndpoint)
-            throw new Error(
-              "Classify Endpoint couldn't be fetch from .env file."
-            );
-        }
-
-        const modelSettingsData =
-          modelSettingsDocSnapshot.data() as ModelSettingsServer;
-
-        if (modelSettingsData === undefined) {
-          console.error("Model Settings Doc data is undefined.");
-          classifyEndpoint =
-            process.env.PYTHON_CLASSIFICATION_MODEL_CLASSIFY_END_POINT;
-          if (!classifyEndpoint)
-            throw new Error(
-              "Classify Endpoint couldn't be fetch from .env file."
-            );
-        }
-
-        classifyEndpoint = modelSettingsData.modelAPIEndpoint;
-
-        const apikey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
-        if (!apikey) {
-          throw new Error("Classify API KEY couldn't be fetch from .env file.");
-        }
-
-        const response = await fetch(classifyEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            APIKEY: apikey,
-          },
-          body: JSON.stringify({
-            image_url: imageURL,
-          }),
-        });
-        if (!response.ok) {
-          throw new Error(
-            `Response from Python Classify API is not okay: ${await response.text()}`
-          );
-        }
-
-        const result = await response.json();
-
-        probabiltiesArray = result["Combined Predictions"];
-      } catch (error) {
-        console.error("Error while fetching to classify API (Python): ", error);
-        return res.status(500).send("Internal Server Error");
-      }
-    } else {
-      probabiltiesArray = [
-        {
-          label: "text",
-          score: 1,
-        },
-      ];
-    }
-
-    let themesArray: ThemeObject[] = [];
-    let onlyThemesArray: string[] = [];
-
-    probabiltiesArray.forEach((a) => {
-      const newThemeObject: ThemeObject = {
-        theme: a.label,
-        ts: Date.now(),
-      };
-      themesArray.push(newThemeObject);
-      onlyThemesArray.push(a.label);
-    });
-
-    /**
-     * 1-) Update providerId/clients/clientId doc's themesArray array that => He loves cat, dogs...
-     */
-
-    try {
-      await firestore
-        .doc(`users/${providerId}/clients/${username}-${startTime}`)
-        .update({
-          themesArray: fieldValue.arrayUnion(...themesArray),
-        });
-    } catch (error) {
-      console.error("Error on updation themes doc", error);
-      return res
-        .status(500)
-        .send(
-          "Internal Server Error on updating themes array on user at provider client list."
-        );
-    }
-
-    /**
-     * 2-) Update all provider's  providerId/postThemes/postThemes doc's postThemesArray array that => postId123 is about cat,dogs, pumas.
-     */
-
-    const postThemeObject: PostThemeObject = {
-      postDocPath: postDocPath,
-      themes: [...onlyThemesArray],
-      ts: Date.now(),
-    };
-
-    let providerDocs;
-    try {
-      providerDocs = await firestore.collection("users").get();
-    } catch (error) {
-      console.error(
-        "Error on postClassification API. We were getting all providers docs to update their postThemes/postThemes doc.",
-        error
-      );
-      return res.status(500).send("Internal Server Error");
-    }
-
-    for (const providerDoc of providerDocs.docs) {
-      try {
-        await firestore
-          .doc(`${providerDoc.ref.path}/postThemes/postThemes`)
-          .update({
-            postThemesArray: fieldValue.arrayUnion({ ...postThemeObject }),
-          });
-      } catch (error) {
-        console.error(
-          "Errron on updating postThemes/postThemes doc....",
-          error
-        );
-        return res
-          .status(500)
-          .send(
-            "Internal Server Error on updating postThemes array on provider/postThemes/postThemes."
-          );
-      }
-    }
-
-    /**
-     * 3-) Update posts/posts doc's postsArray array that => postDocPath and Timestamp
-     */
-
-    const post: Post = {
-      postDocPath: postDocPath,
-      ts: Date.now(),
-    };
-    try {
-      await firestore.doc("posts/posts").update({
-        postsArray: fieldValue.arrayUnion({
-          ...post,
-        }),
-      });
-    } catch (error) {
-      console.error("Errron on updating posts/posts doc....", error);
-      return res
-        .status(500)
-        .send(
-          "Internal Server Error on updating postsArray array on posts/posts."
-        );
-    }
-  });
+  const updatePostsResult = await updatePosts(postDocPath);
+  if (!updatePostsResult) return res.status(500).send("Internal Server Error");
 
   return res.status(200).send("Success on Post Classifying...");
 }
