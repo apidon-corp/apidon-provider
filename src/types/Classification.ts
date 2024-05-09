@@ -4,11 +4,18 @@ export type PostThemeObject = {
   themes: string[];
 };
 
-export type PostThemeObjectValued = {
+export type RelevanceScoredPostThemeObject = {
   postDocPath: string;
   ts: number;
   themes: string[];
-  value: number;
+  relevanceScore: number;
+};
+
+export type CombinedScoredPostThemeObject = {
+  postDocPath: string;
+  ts: number;
+  themes: string[];
+  combinedScore: number;
 };
 
 export type Post = {

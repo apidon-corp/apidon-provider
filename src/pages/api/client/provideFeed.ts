@@ -1,7 +1,8 @@
 import { firestore } from "@/firebase/adminApp";
 import {
+  CombinedScoredPostThemeObject,
   PostThemeObject,
-  PostThemeObjectValued,
+  RelevanceScoredPostThemeObject,
   ThemeObject,
 } from "@/types/Classification";
 import { NextApiRequest, NextApiResponse } from "next";
@@ -11,6 +12,236 @@ export const config = {
   maxDuration: 120,
 };
 
+async function handleAuthorization(key: string | undefined) {
+  if (key === undefined) {
+    console.error("Unauthorized attemp to provideFeed API.");
+    return false;
+  }
+
+  const apiKey = process.env.API_KEY_BETWEEN_SERVICES;
+  if (apiKey === undefined) {
+    console.error("API_KEY_BETWEEN_SERVICES is undefined");
+    return false;
+  }
+
+  if (key !== apiKey) {
+    console.error("Unauthorized attempt to provideFeed API.");
+    return false;
+  }
+
+  return true;
+}
+
+function validateProps(username: string, provider: string, startTime: number) {
+  if (!username || !provider || !startTime) {
+    console.error("Invalid Props");
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Getting what client interested from clients/{clientName}(username)-{start-time}/themesArray
+ * @param username
+ * @param provider
+ * @param startTime
+ * @returns Array of what user interested like [cat,dog,whale]
+ */
+async function getWhatClientIntersted(
+  username: string,
+  provider: string,
+  startTime: number
+) {
+  try {
+    const clientDocSnapshot = await firestore
+      .doc(`/users/${provider}/clients/${username}-${startTime}`)
+      .get();
+
+    if (!clientDocSnapshot.exists) {
+      console.error("Client doc doesn't exist.");
+      return false;
+    }
+
+    const clientDocData = clientDocSnapshot.data();
+    if (clientDocData === undefined) {
+      console.error("Client doc data is undefined.");
+      return false;
+    }
+
+    const themesArray = clientDocData.themesArray as ThemeObject[];
+
+    // We need to handle this carefully later for first time users.
+    if (!themesArray) {
+      console.error("themesArray is undefined");
+      return false;
+    }
+
+    // We need to handle this carefully later for first time users.
+    if (themesArray.length === 0) {
+      console.warn("This user has no theme object in its themesArray");
+      return false;
+    }
+
+    const themesOnly = themesArray.map((theme) => theme.theme);
+    return themesOnly;
+  } catch (error) {
+    console.error("Error on getting client doc", error);
+    return false;
+  }
+}
+
+/**
+ * @param provider
+ * @returns Doc paths and tags of all posts in server like [ { postDocPath : "/users/yunuskorkmaz/posts/post1", themes: [cat,dog,whale], ts: 150220069 } ]
+ */
+async function getAllPostsWithTheirThemes(provider: string) {
+  try {
+    const postThemesSnapshot = await firestore
+      .doc(`/users/${provider}/postThemes/postThemes`)
+      .get();
+
+    if (!postThemesSnapshot.exists) {
+      console.error("postThemes doc doesn't exist.");
+      return false;
+    }
+
+    const postThemesDocData = postThemesSnapshot.data();
+    if (postThemesDocData === undefined) {
+      console.error("postThemes doc data is undefined.");
+      return false;
+    }
+
+    const postThemesArray =
+      postThemesDocData.postThemesArray as PostThemeObject[];
+
+    if (postThemesArray.length === 0) {
+      console.error(
+        "postThemesArray is empty. This can be only caused by an integration error."
+      );
+      return false;
+    }
+
+    return postThemesArray;
+  } catch (error) {
+    console.error("Error on getting postThemes doc", error);
+    return false;
+  }
+}
+
+/**
+ * Ranks posts for client based on their themes.
+ * @param username
+ * @param provider
+ * @param startTime
+ * @returns Creates relevence scored posts array.
+ */
+async function createRelevanceScoredPostObjects(
+  username: string,
+  provider: string,
+  startTime: number
+) {
+  const clientInterestedThemes = await getWhatClientIntersted(
+    username,
+    provider,
+    startTime
+  );
+  if (!clientInterestedThemes) return false;
+
+  const postsWithTheirThemes = await getAllPostsWithTheirThemes(provider);
+  if (!postsWithTheirThemes) return false;
+
+  const relevanceScoredPostThemeObjects: RelevanceScoredPostThemeObject[] = [];
+
+  for (const postWithItsTheme of postsWithTheirThemes) {
+    let relevanceScore = 0;
+    postWithItsTheme.themes.map((theme) => {
+      if (clientInterestedThemes.includes(theme)) relevanceScore++;
+    });
+
+    relevanceScore = relevanceScore / postWithItsTheme.themes.length;
+
+    relevanceScoredPostThemeObjects.push({
+      postDocPath: postWithItsTheme.postDocPath,
+      themes: postWithItsTheme.themes,
+      ts: postWithItsTheme.ts,
+      relevanceScore: relevanceScore,
+    });
+  }
+
+  return relevanceScoredPostThemeObjects;
+}
+
+async function createCombinedScoredPostsObjects(
+  username: string,
+  provider: string,
+  startTime: number,
+  relevancyWeight: number,
+  recencyWeight: number
+) {
+  const relevanceScoredPostThemeObjects =
+    await createRelevanceScoredPostObjects(username, provider, startTime);
+  if (!relevanceScoredPostThemeObjects) {
+    console.error("Error on creating rankedPostObjects");
+    return false;
+  }
+
+  const currentTime = Date.now();
+
+  const rankedPostThemeObjects: CombinedScoredPostThemeObject[] = [];
+
+  for (const relevanceScoredPostThemeObject of relevanceScoredPostThemeObjects) {
+    const postCreationTime = relevanceScoredPostThemeObject.ts;
+    const timeDifference = currentTime - postCreationTime;
+
+    // Normalize time difference
+    const normalizedRecency = 1 / timeDifference / (1000 * 60 * 60 * 24);
+
+    // Normalize relevancy score. (It is already relevanced)
+    const normalizedRelevancy = relevanceScoredPostThemeObject.relevanceScore;
+
+    // Calculate combined score with weights
+    const combinedScore =
+      recencyWeight * normalizedRecency + relevancyWeight * normalizedRelevancy;
+
+    rankedPostThemeObjects.push({
+      postDocPath: relevanceScoredPostThemeObject.postDocPath,
+      themes: relevanceScoredPostThemeObject.themes,
+      ts: relevanceScoredPostThemeObject.ts,
+      combinedScore: combinedScore,
+    });
+  }
+
+  return rankedPostThemeObjects;
+}
+
+async function preparePostsForClient(
+  username: string,
+  provider: string,
+  startTime: number,
+  relevancyWeight: number,
+  recencyWeight: number
+) {
+  const combinedScoredPosts = await createCombinedScoredPostsObjects(
+    username,
+    provider,
+    startTime,
+    relevancyWeight,
+    recencyWeight
+  );
+
+  if (!combinedScoredPosts) {
+    console.error("Error on creating combinedScoredPostsObjects");
+    return false;
+  }
+
+  const sortedPosts = combinedScoredPosts
+    .sort((a, b) => b.combinedScore - a.combinedScore)
+    .map((post) => post.postDocPath);
+
+  return sortedPosts;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -18,139 +249,23 @@ export default async function handler(
   const { authorization } = req.headers;
   const { username, provider, startTime } = req.body;
 
-  if (authorization !== process.env.API_KEY_BETWEEN_SERVICES)
-    return res.status(401).send("Unauthorized");
+  const authResult = await handleAuthorization(authorization);
+  if (!authResult) return res.status(401).send("Unauthorized");
 
-  if (!username || !provider) {
-    return res.status(422).send("Invalid Prop or Props");
-  }
+  const propResult = validateProps(username, provider, startTime);
+  if (!propResult) return res.status(422).send("Invalid Props");
 
-  let providerDocSnapshot: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>;
-  try {
-    providerDocSnapshot = await firestore.doc(`users/${provider}`).get();
-  } catch (error) {
-    console.error("Error while getting providerDocSnapshot", error);
-    return res.status(503).send("Firebase Error");
-  }
+  const relevancyWeight = 1;
+  const recencyWeight = 1;
 
-  if (!providerDocSnapshot.exists)
-    return res.status(422).send("Invalid Provider Name");
-
-  /**
-   * 1-) Getting themes array of user
-   * 2-) Look postThemes/postThemes for themes array...
-   * 3-) Return the result to user.
-   */
-
-  /**
-   * 1-) Getting themes array of user
-   */
-
-  let themesArrayOfClient;
-  try {
-    const clientDocOnProvider = await firestore
-      .doc(`users/${provider}/clients/${username}-${startTime}`)
-      .get();
-    if (clientDocOnProvider.exists === false)
-      throw new Error("Client Doc on Proivder doesn't exist.");
-
-    if (clientDocOnProvider.data()!.themesArray === undefined) {
-      throw new Error(
-        "Client Doc on Proivder doesn't have 'themesArray' field"
-      );
-    }
-
-    themesArrayOfClient = clientDocOnProvider.data()!
-      .themesArray as ThemeObject[];
-  } catch (error) {
-    console.error(
-      "Erron on creating feed for user. We were on getting clientDocOnProvider",
-      error
-    );
-    return res.status(500).send("Internal Server Error");
-  }
-  let postThemesArray: PostThemeObject[];
-  try {
-    const postThemesDoc = await firestore
-      .doc(`users/${provider}/postThemes/postThemes`)
-      .get();
-
-    if (postThemesDoc.exists === false)
-      throw new Error("Post Themes Doc doesn't exist");
-
-    if (postThemesDoc.data()!.postThemesArray === undefined) {
-      throw new Error("Post Themes Doc doesn't have postThemesArray field.");
-    }
-    postThemesArray = postThemesDoc.data()!.postThemesArray;
-  } catch (error) {
-    console.error(
-      "Error while creating feed for user. We were getting postThemes/postThemes doc",
-      error
-    );
-    return res.status(500).send("Internal Server Error");
-  }
-
-  let clientKeys: string[] = [];
-  for (const clinetThemeObject of themesArrayOfClient) {
-    clientKeys.push(clinetThemeObject.theme);
-  }
-
-  let postDocPathArray: string[] = [];
-
-  let valuedPostThemeObjectArray: PostThemeObjectValued[] = [];
-
-  for (const postThemeObject of postThemesArray) {
-    const themes = postThemeObject.themes;
-    let value = 0;
-    for (const theme of themes) {
-      // Simulating different algorithms has different technics
-
-      if (provider === "LogicHead") {
-        if (clientKeys.includes(theme)) value++;
-      } else if (provider === "SmartFeed") {
-        const random = Math.round(Math.random()); // 0 or 1
-        if (random === 1) if (clientKeys.includes(theme)) value++;
-        if (random === 0) if (clientKeys.includes(theme)) value--;
-      }
-    }
-
-    if (value === 0) continue;
-
-    const valuedPostThemeObject: PostThemeObjectValued = {
-      postDocPath: postThemeObject.postDocPath,
-      themes: postThemeObject.themes,
-      ts: postThemeObject.ts,
-      value: value,
-    };
-
-    valuedPostThemeObjectArray.push(valuedPostThemeObject);
-  }
-
-  valuedPostThemeObjectArray.sort((a, b) => b.value - a.value);
-
-  for (const valuedPostThemeObject of valuedPostThemeObjectArray) {
-    postDocPathArray.push(valuedPostThemeObject.postDocPath);
-  }
-
-  // To show posts to new users, we are randomly choosing posts.
-  if (postDocPathArray.length === 0) {
-    let randomPostDocs: PostThemeObject[] = [];
-
-    for (let index = 0; index < 15; index++) {
-      const randomIndex = Math.floor(Math.random() * 83);
-      const randomPostDoc = postThemesArray[randomIndex];
-      if (randomPostDoc !== undefined) randomPostDocs.push(randomPostDoc);
-    }
-
-    randomPostDocs.sort((a, b) => b.ts - a.ts);
-
-    for (const randomPostDoc of randomPostDocs) {
-      const randomPostDocPath = randomPostDoc.postDocPath;
-      postDocPathArray.push(randomPostDocPath);
-    }
-  }
-
-  postDocPathArray = Array.from(new Set(postDocPathArray));
+  const postDocPathArray = await preparePostsForClient(
+    username,
+    provider,
+    startTime,
+    relevancyWeight,
+    recencyWeight
+  );
+  if (!postDocPathArray) return res.status(500).send("Internal Server Error");
 
   return res.status(200).json({
     postDocPathArray: postDocPathArray,
