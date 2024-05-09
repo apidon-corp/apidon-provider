@@ -172,6 +172,40 @@ async function createRelevanceScoredPostObjects(
   return relevanceScoredPostThemeObjects;
 }
 
+async function getAlgorithmSettings(provider: string) {
+  try {
+    const algorithmSettingsSnapshot = await firestore
+      .doc(`/users/${provider}/modelSettings/algorithmSettings`)
+      .get();
+    if (!algorithmSettingsSnapshot.exists) {
+      console.error("Algorithm settings doc doesn't exist.");
+      return false;
+    }
+
+    const algorithmSettingsData = algorithmSettingsSnapshot.data();
+    if (algorithmSettingsData === undefined) {
+      console.error("Algorithm settings data is undefined.");
+      return false;
+    }
+
+    const recencyWeight = algorithmSettingsData.recencyWeight;
+    const relevanceWeight = algorithmSettingsData.relevanceWeight;
+
+    if (!recencyWeight || !relevanceWeight) {
+      console.error("Recency weight or relevance weight is undefined.");
+      return false;
+    }
+
+    return {
+      recencyWeight: recencyWeight,
+      relevanceWeight: relevanceWeight,
+    };
+  } catch (error) {
+    console.error("Error on getting algorithm settings doc", error);
+    return false;
+  }
+}
+
 async function createCombinedScoredPostsObjects(
   username: string,
   provider: string,
@@ -218,10 +252,14 @@ async function createCombinedScoredPostsObjects(
 async function preparePostsForClient(
   username: string,
   provider: string,
-  startTime: number,
-  relevancyWeight: number,
-  recencyWeight: number
+  startTime: number
 ) {
+  const algorithmSettings = await getAlgorithmSettings(provider);
+  if (!algorithmSettings) return false;
+
+  const relevancyWeight = algorithmSettings.relevanceWeight;
+  const recencyWeight = algorithmSettings.recencyWeight;
+
   const combinedScoredPosts = await createCombinedScoredPostsObjects(
     username,
     provider,
@@ -255,15 +293,10 @@ export default async function handler(
   const propResult = validateProps(username, provider, startTime);
   if (!propResult) return res.status(422).send("Invalid Props");
 
-  const relevancyWeight = 1;
-  const recencyWeight = 1;
-
   const postDocPathArray = await preparePostsForClient(
     username,
     provider,
-    startTime,
-    relevancyWeight,
-    recencyWeight
+    startTime
   );
   if (!postDocPathArray) return res.status(500).send("Internal Server Error");
 
