@@ -28,11 +28,12 @@ function handlePreflightRequest(res: NextApiResponse) {
 }
 
 /**
- * Getting unique classify endpoint.
+ * Getting extension of classification model. (.pth, .tflite)
+ * We will use this information to run our classification model on right environment.
  * @param providerId
  * @returns
  */
-async function getClassifyEndpoint(providerId: string) {
+async function getClassificationModelExtension(providerId: string) {
   try {
     const modelSettingsDocSnapshot = await firestore
       .doc(`/users/${providerId}/modelSettings/modelSettings`)
@@ -50,7 +51,7 @@ async function getClassifyEndpoint(providerId: string) {
       return false;
     }
 
-    return modelSettingsData.modelAPIEndpoint;
+    return modelSettingsData.modelExtension;
   } catch (error) {
     console.error("Error on getting classify point of provider: \n", error);
     return false;
@@ -64,8 +65,14 @@ async function getClassifyEndpoint(providerId: string) {
  * @returns
  */
 async function getClassifyResult(providerId: string, imageURL: string | null) {
-  const classifyEndpoint = await getClassifyEndpoint(providerId);
-  if (!classifyEndpoint) return false;
+  const classifyEndpoint = process.env.PYTHON_MODEL_CLASSIFY_API_END_POINT;
+  if (!classifyEndpoint) {
+    console.error("Classify endpoint is undefined.");
+    return false;
+  }
+
+  const modelExtension = await getClassificationModelExtension(providerId);
+  if (!modelExtension) return false;
 
   if (!imageURL) {
     return [
@@ -83,6 +90,8 @@ async function getClassifyResult(providerId: string, imageURL: string | null) {
     return false;
   }
 
+  const modelPath = `/users/${providerId}/model/model.${modelExtension}`;
+
   const response = await fetch(classifyEndpoint, {
     method: "POST",
     headers: {
@@ -91,6 +100,7 @@ async function getClassifyResult(providerId: string, imageURL: string | null) {
     },
     body: JSON.stringify({
       image_url: imageURL,
+      model_path: modelPath,
     }),
   });
 
@@ -226,6 +236,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method === "OPTIONS") return handlePreflightRequest(res);
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   const { authorization } = req.headers;
   const { username, postDocPath, imageURL, providerId, startTime } = req.body;

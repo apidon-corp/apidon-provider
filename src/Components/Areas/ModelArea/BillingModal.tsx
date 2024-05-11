@@ -36,7 +36,11 @@ import {
   TempModelSettingsPlaceholder,
 } from "@/types/Model";
 import { ethers } from "ethers";
-import { getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import {
+  getDownloadURL,
+  uploadBytes,
+  uploadBytesResumable,
+} from "firebase/storage";
 import { BiError } from "react-icons/bi";
 
 export default function BillingModal() {
@@ -91,6 +95,7 @@ export default function BillingModal() {
   const [modelUploadSettingsState, setModelUploadSettingsState] =
     useState<TempModelSettings>(TempModelSettingsPlaceholder);
   const modelInputRef = useRef<HTMLInputElement>(null);
+  const labelInputRef = useRef<HTMLInputElement>(null);
 
   const [modelUploadProgress, setModelUploadProgress] = useState(0);
 
@@ -219,9 +224,7 @@ export default function BillingModal() {
     }
   };
 
-  const handleModelFileChange = async (
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleModelFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
 
     const modelFileFromInput = event.target.files[0];
@@ -232,11 +235,24 @@ export default function BillingModal() {
     }));
   };
 
+  const handleLabelFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const labelFileFromInput = event.target.files[0];
+
+    setModelUploadSettingsState((prev) => ({
+      ...prev,
+      labelFile: labelFileFromInput,
+    }));
+  };
+
   const handleUploadButton = async () => {
     setBillingModalViewState("uploadingModel");
     setModelUploadProgress(0);
 
-    if (!modelUploadSettingsState.modelFile) {
+    if (
+      !modelUploadSettingsState.modelFile ||
+      !modelUploadSettingsState.labelFile
+    ) {
       console.error("There is no file choosen.");
       return setBillingModalViewState("uploadModel");
     }
@@ -286,6 +302,27 @@ export default function BillingModal() {
       return setBillingModalViewState("uploadModel");
     }
 
+    // Uploading label file to Firebase Storage, temporarily.
+    let labelURL;
+    try {
+      const authObject = auth.currentUser;
+      if (authObject === null) {
+        console.error("There is no user for operation.");
+        return setBillingModalViewState("uploadModel");
+      }
+      const storageRef = ref(
+        storage,
+        `/users/${authObject.displayName}/model/temp/label.json`
+      );
+
+      await uploadBytes(storageRef, modelUploadSettingsState.labelFile);
+
+      labelURL = await getDownloadURL(storageRef);
+    } catch (error) {
+      console.error("Error on uploading label file temporarily: \n", error);
+      return setBillingModalViewState("uploadModel");
+    }
+
     // Update Firestore "temp" doc.
     try {
       const authObject = auth.currentUser;
@@ -304,6 +341,7 @@ export default function BillingModal() {
         inputImageSizes: modelUploadSettingsState.inputImageSizes,
         modelEnvironment: modelUploadSettingsState.modelEnvironment,
         modelExtension: modelUploadSettingsState.modelExtension,
+        labelPath: labelURL,
       };
 
       const response = await fetch("api/user/model/uploadModel", {
@@ -638,7 +676,7 @@ export default function BillingModal() {
                     </Select>
                   </Flex>
                   <Flex
-                    id="model-environemt"
+                    id="model-file"
                     direction="column"
                     bg="black"
                     borderRadius="10px"
@@ -679,6 +717,51 @@ export default function BillingModal() {
                       onChange={handleModelFileChange}
                       type="file"
                       accept={`.${modelUploadSettingsState.modelExtension}`}
+                      hidden
+                    />
+                  </Flex>
+                  <Flex
+                    id="label-file"
+                    direction="column"
+                    bg="black"
+                    borderRadius="10px"
+                    p="4"
+                    width="100%"
+                  >
+                    <Flex align="center" gap="2">
+                      <Text color="gray.700" fontWeight="500" fontSize="12pt">
+                        Label File
+                      </Text>
+                      <Button
+                        variant="outline"
+                        colorScheme="blue"
+                        size="xs"
+                        onClick={() => {
+                          if (labelInputRef.current)
+                            labelInputRef.current.click();
+                        }}
+                      >
+                        Choose New Label
+                      </Button>
+                    </Flex>
+
+                    <Text
+                      color="pink.500"
+                      fontWeight="700"
+                      fontSize="16pt"
+                      maxWidth="15em"
+                      isTruncated
+                    >
+                      {modelUploadSettingsState.labelFile
+                        ? modelUploadSettingsState.labelFile.name
+                        : "Choose a file."}
+                    </Text>
+
+                    <Input
+                      ref={labelInputRef}
+                      onChange={handleLabelFileChange}
+                      type="file"
+                      accept={".json"}
                       hidden
                     />
                   </Flex>
