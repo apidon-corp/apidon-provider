@@ -32,8 +32,8 @@ export type ThemeObject = {
  * Can be used for getting result from classifiton APIs.
  */
 export type PostPredictionObject = {
-  label: string;
-  score: number;
+  class_name: string;
+  probability: number;
 };
 
 /**
@@ -47,7 +47,10 @@ export type PostServerData = {
   image: string;
 
   likeCount: number;
+  likes: LikeDataV2[];
+
   commentCount: number;
+  comments: CommendDataV2[];
 
   nftStatus: {
     convertedToNft: boolean;
@@ -55,4 +58,16 @@ export type PostServerData = {
   };
 
   creationTime: number;
+  id: string;
+};
+
+type CommendDataV2 = {
+  sender: string;
+  message: string;
+  ts: number;
+};
+
+type LikeDataV2 = {
+  sender: string;
+  ts: number;
 };

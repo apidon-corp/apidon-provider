@@ -1,6 +1,11 @@
 import getDisplayName from "@/apiUtils";
 import { bucket, firestore } from "@/firebase/adminApp";
-import { Post, PostServerData, PostThemeObject } from "@/types/Classification";
+import {
+  Post,
+  PostPredictionObject,
+  PostServerData,
+  PostThemeObject,
+} from "@/types/Classification";
 import { ModelSettings } from "@/types/Model";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -124,13 +129,13 @@ async function uploadModelToPythonAPIs(
   modelURL: string,
   labelURL: string
 ) {
-  const apiKey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
+  const apiKey = process.env.PYTHON_API_KEY_V2;
   if (!apiKey) {
     console.error("API key is undefined for uploading model to python api.");
     return false;
   }
 
-  const apiEndpoint = process.env.PYTHON_MODEL_UPLOAD_API_ENDPOINT;
+  const apiEndpoint = process.env.PYTHON_MODEL_UPLOAD_API_ENDPOINT_V2;
   if (!apiEndpoint) {
     console.error(
       "API endpoint is undefined for uploading model to python api."
@@ -138,23 +143,24 @@ async function uploadModelToPythonAPIs(
     return false;
   }
 
+  const formData = new FormData();
+
+  formData.append("path", modelPath);
+  formData.append("url", modelURL);
+  formData.append("label_url", labelURL);
+
   try {
     const response = await fetch(apiEndpoint, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        APIKEY: apiKey,
+        authorization: apiKey,
       },
-      body: JSON.stringify({
-        modelPath: modelPath,
-        modelURL: modelURL,
-        labelURL: labelURL,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
       console.error(
-        "Response from python api is not okay: \n",
+        "Response from Python Model Upload API is not okay: \n",
         await response.text()
       );
       return false;
@@ -280,22 +286,8 @@ async function getPostInformationFromUserSide(postDocPath: string) {
 }
 
 async function preparePostsForClassifying(posts: Post[]) {
-  const getPostInformationPromisesArray: Promise<
-    | {
-        postDocPath: string;
-        postDocData: PostServerData | false;
-      }
-    | false
-  >[] = [];
-  for (const post of posts) {
-    const getPostInformationPromise = getPostInformationFromUserSide(
-      post.postDocPath
-    );
-    getPostInformationPromisesArray.push(getPostInformationPromise);
-  }
-
   const getPostInformationPromisesResultArray = await Promise.all(
-    getPostInformationPromisesArray
+    posts.map((p) => getPostInformationFromUserSide(p.postDocPath))
   );
 
   const preparedPostsForClassifying: {
@@ -320,73 +312,114 @@ async function classifyPosts(
   preparedPostsForClassyfing: {
     postDocPath: string;
     postDocData: PostServerData;
-  }[]
+  }[],
+  modelPathURL: string,
+  modelExtension: string,
+  img_width: string,
+  img_height: string
 ) {
-  const apiKey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
-  if (!apiKey) {
-    console.error("API key is undefined for uploading model to python api.");
-    return false;
+  const postThemeObjects = await Promise.all(
+    preparedPostsForClassyfing.map((p) =>
+      createPostThemeObject(
+        p,
+        modelPathURL,
+        modelExtension,
+        img_width,
+        img_height
+      )
+    )
+  );
+
+  return postThemeObjects;
+}
+
+async function createPostThemeObject(
+  preparedPost: {
+    postDocPath: string;
+    postDocData: PostServerData;
+  },
+  modelPathURL: string,
+  modelExtension: string,
+  img_width: string,
+  img_height: string
+) {
+  if (preparedPost.postDocData.image.length === 0) {
+    const postThemeObject: PostThemeObject = {
+      postDocPath: preparedPost.postDocPath,
+      themes: ["text"],
+      ts: preparedPost.postDocData.creationTime,
+    };
+    return postThemeObject;
   }
 
-  const apiEndpoint = process.env.PYTHON_MODEL_UPLOAD_API_ENDPOINT;
+  /**
+   * This object will be used when there is an error on classification API.
+   */
+  const placeHolderPostServerData: PostThemeObject = {
+    postDocPath: preparedPost.postDocPath,
+    themes: ["no-classification"],
+    ts: preparedPost.postDocData.creationTime,
+  };
+
+  const apiKey = process.env.PYTHON_API_KEY_V2;
+  if (!apiKey) {
+    console.error("API key is undefined for uploading model to python api.");
+    return placeHolderPostServerData;
+  }
+
+  const apiEndpoint = process.env.PYTHON_CLASSIFY_API_ENDPOINT_V2;
   if (!apiEndpoint) {
     console.error(
       "API endpoint is undefined for uploading model to python api."
     );
-    return false;
+    return placeHolderPostServerData;
   }
 
-  const postThemeObjects: PostThemeObject[] = [];
+  const formData = new FormData();
 
-  for (const preparedPost of preparedPostsForClassyfing) {
-    if (!preparedPost.postDocData.image) continue;
+  formData.append("image_url", preparedPost.postDocData.image);
+  formData.append("model_path_url", modelPathURL);
+  formData.append("model_extension", `.${modelExtension}`);
+  formData.append("img_width", img_width);
+  formData.append("img_height", img_height);
 
-    try {
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          APIKEY: apiKey,
-        },
-        body: JSON.stringify({
-          image_url: preparedPost.postDocData.image,
-        }),
-      });
+  try {
+    const response = await fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        authorization: apiKey,
+      },
+      body: formData,
+    });
 
-      if (!response.ok) {
-        console.error(
-          "Response from classify image API of provider is not okay:: \n",
-          await response.text()
-        );
-        return false;
-      }
-
-      const result = await response.json();
-      const predictions = result["Combined Predictions"] as {
-        label: string;
-        score: number;
-      }[];
-
-      const themes: string[] = [];
-
-      predictions.forEach((a) => {
-        themes.push(a.label);
-      });
-
-      const postThemeObject: PostThemeObject = {
-        postDocPath: preparedPost.postDocPath,
-        themes: themes,
-        ts: preparedPost.postDocData.creationTime,
-      };
-
-      postThemeObjects.push(postThemeObject);
-    } catch (error) {
-      console.error("Error on classifiying post: \n", error);
-      return false;
+    if (!response.ok) {
+      console.error(
+        "Response from classify image API of provider is not okay:: \n",
+        await response.text()
+      );
+      return placeHolderPostServerData;
     }
-  }
 
-  return postThemeObjects;
+    const result = await response.json();
+    const predictions = result["predictions"] as PostPredictionObject[];
+
+    const themes: string[] = [];
+
+    predictions.forEach((a) => {
+      themes.push(a.class_name);
+    });
+
+    const postThemeObject: PostThemeObject = {
+      postDocPath: preparedPost.postDocPath,
+      themes: themes,
+      ts: preparedPost.postDocData.creationTime,
+    };
+
+    return postThemeObject;
+  } catch (error) {
+    console.error("Error on classifiying post: \n", error);
+    return placeHolderPostServerData;
+  }
 }
 
 async function updatePostThemesArray(
@@ -442,6 +475,7 @@ async function deleteTempModelSettingsDoc(username: string) {
     await firestore
       .doc(`/users/${username}/modelSettings/modelSettingsTemp`)
       .delete();
+    return true;
   } catch (error) {
     console.error("Error on deleting temp model settings doc.");
     return false;
@@ -482,14 +516,18 @@ export default async function handler(
   const labelFileURL = await updateLabelFileWithTempOne(operationFromUsername);
   if (!labelFileURL) return res.status(500).send("Internal Server Error");
 
+  const modelPathURL = `/users/${operationFromUsername}/model/model.${tempModelSettingsData.modelExtension}`;
+
   const uploadModelToPythonAPIResult = await uploadModelToPythonAPIs(
-    `/users/${operationFromUsername}/model/model.${tempModelSettingsData.modelExtension}`,
+    modelPathURL,
     modelFileURL,
     labelFileURL
   );
 
   if (!uploadModelToPythonAPIResult)
     return res.status(500).send("Internal Server Error");
+
+  console.log("Model Uploaded.");
 
   const updateModelSettingsDocResult = await updateModelSettingsDoc(
     operationFromUsername,
@@ -501,15 +539,32 @@ export default async function handler(
   if (!updateModelSettingsDocResult)
     return res.status(500).send("Internal Server Error");
 
+  console.log("Model Settings doc updated.");
+
   const postsArray = await getAllPostsFromServer();
   if (!postsArray) return res.status(500).send("Internal Server Error");
+
+  console.log("Posts Array fethced");
 
   const preparedPostsForClassifying = await preparePostsForClassifying(
     postsArray
   );
 
-  const postThemeObjects = await classifyPosts(preparedPostsForClassifying);
+  console.log("Posts Prepared for classifying");
+
+  const imageSize = tempModelSettingsData.inputImageSizes;
+  const shape = imageSize.split("x")[0];
+
+  const postThemeObjects = await classifyPosts(
+    preparedPostsForClassifying,
+    modelPathURL,
+    tempModelSettingsData.modelExtension,
+    shape,
+    shape
+  );
   if (!postThemeObjects) return res.status(500).send("Internal Server Error");
+
+  console.log("Post theme objects are created.");
 
   const postThemesUpdateResult = await updatePostThemesArray(
     operationFromUsername,
@@ -518,17 +573,23 @@ export default async function handler(
   if (!postThemesUpdateResult)
     return res.status(500).send("Internal Server Error");
 
+  console.log("postThemesUpdate successfull.");
+
   const updateBillDocAtTheEndResult = await updateBillDocAtTheEnd(
     operationFromUsername
   );
   if (!updateBillDocAtTheEndResult)
     return res.status(500).send("Internal Server Error");
 
+  console.log("updateBillDoc successfull.");
+
   const deleteTempModelSettingsDocResult = await deleteTempModelSettingsDoc(
     operationFromUsername
   );
   if (!deleteTempModelSettingsDocResult)
     return res.status(500).send("Internal Server Error");
+
+  console.log("deleteTempModelSettingsDoc successfull.");
 
   return res.status(200).send("Suceess.");
 }

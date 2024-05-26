@@ -5,7 +5,7 @@ import {
   PostThemeObject,
   ThemeObject,
 } from "@/types/Classification";
-import { ModelSettingsServer } from "@/types/Model";
+import { ModelSettings } from "@/types/Model";
 
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -33,7 +33,7 @@ function handlePreflightRequest(res: NextApiResponse) {
  * @param providerId
  * @returns
  */
-async function getClassificationModelExtension(providerId: string) {
+async function getModelSettings(providerId: string) {
   try {
     const modelSettingsDocSnapshot = await firestore
       .doc(`/users/${providerId}/modelSettings/modelSettings`)
@@ -43,15 +43,14 @@ async function getClassificationModelExtension(providerId: string) {
       return false;
     }
 
-    const modelSettingsData =
-      modelSettingsDocSnapshot.data() as ModelSettingsServer;
+    const modelSettingsData = modelSettingsDocSnapshot.data() as ModelSettings;
 
     if (modelSettingsData === undefined) {
       console.error("Model settings data is undefined.");
       return false;
     }
 
-    return modelSettingsData.modelExtension;
+    return modelSettingsData;
   } catch (error) {
     console.error("Error on getting classify point of provider: \n", error);
     return false;
@@ -65,43 +64,47 @@ async function getClassificationModelExtension(providerId: string) {
  * @returns
  */
 async function getClassifyResult(providerId: string, imageURL: string | null) {
-  const classifyEndpoint = process.env.PYTHON_MODEL_CLASSIFY_API_END_POINT;
+  const classifyEndpoint = process.env.PYTHON_CLASSIFY_API_ENDPOINT_V2;
   if (!classifyEndpoint) {
     console.error("Classify endpoint is undefined.");
     return false;
   }
 
-  const modelExtension = await getClassificationModelExtension(providerId);
-  if (!modelExtension) return false;
-
-  if (!imageURL) {
-    return [
-      {
-        label: "text",
-        score: 0,
-      },
-    ] as PostPredictionObject[];
-  }
-
-  const apikey = process.env.PYTHON_CLASSIFICATION_MODEL_API_KEY;
-
+  const apikey = process.env.PYTHON_API_KEY_V2;
   if (!apikey) {
     console.error("API key for classify is undefined.");
     return false;
   }
 
-  const modelPath = `/users/${providerId}/model/model.${modelExtension}`;
+  const modelSettings = await getModelSettings(providerId);
+  if (!modelSettings) return false;
+
+  if (!imageURL) {
+    return [
+      {
+        class_name: "text",
+        probability: 0,
+      },
+    ] as PostPredictionObject[];
+  }
+
+  const modelPath = `/users/${providerId}/model/model.${modelSettings.modelExtension}`;
+  const shape = modelSettings.inputImageSizes.split("x")[0];
+
+  const formData = new FormData();
+
+  formData.append("image_url", imageURL);
+  formData.append("model_path_url", modelPath);
+  formData.append("model_extension", `.${modelSettings.modelExtension}`);
+  formData.append("img_width", shape);
+  formData.append("img_height", shape);
 
   const response = await fetch(classifyEndpoint, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      APIKEY: apikey,
+      authorization: apikey,
     },
-    body: JSON.stringify({
-      image_url: imageURL,
-      model_path: modelPath,
-    }),
+    body: formData,
   });
 
   if (!response.ok) {
@@ -114,7 +117,7 @@ async function getClassifyResult(providerId: string, imageURL: string | null) {
 
   const result = await response.json();
 
-  return result["Combined Predictions"] as PostPredictionObject[];
+  return result["predictions"] as PostPredictionObject[];
 }
 
 /**
@@ -135,7 +138,7 @@ async function updatePostThemesArray(
   const postThemeObject: PostThemeObject = {
     postDocPath: postDocPath,
     ts: Date.now(),
-    themes: predictions.map((prediction) => prediction.label),
+    themes: predictions.map((prediction) => prediction.class_name),
   };
 
   try {
@@ -169,7 +172,7 @@ async function updateClientDoc(
   if (!predictions) return false;
 
   const themeArrayObjectArray: ThemeObject[] = predictions.map(
-    (prediction) => ({ theme: prediction.label, ts: Date.now() })
+    (prediction) => ({ theme: prediction.class_name, ts: Date.now() })
   );
 
   try {
@@ -259,6 +262,8 @@ export default async function handler(
     if (!result) return res.status(500).send("Internal Server Error");
   }
 
+  console.log("Update postThemes array successfull");
+
   const updateClientDocResult = await updateClientDoc(
     providerId,
     username,
@@ -268,8 +273,12 @@ export default async function handler(
   if (!updateClientDocResult)
     return res.status(500).send("Internal Server Error");
 
+  console.log("Update clientDoc  successfull");
+
   const updatePostsResult = await updatePosts(postDocPath);
   if (!updatePostsResult) return res.status(500).send("Internal Server Error");
 
-  return res.status(200).send("Success on Post Classifying...");
+  console.log("uplatePostsResult is successfull");
+
+  return res.status(200).send("Success");
 }
