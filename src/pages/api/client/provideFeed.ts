@@ -78,10 +78,10 @@ async function getWhatClientIntersted(
     }
 
     // We need to handle this carefully later for first time users.
-    if (themesArray.length === 0) {
-      console.warn("This user has no theme object in its themesArray");
-      return false;
-    }
+    // if (themesArray.length === 0) {
+    //   console.warn("This user has no theme object in its themesArray");
+    //   return false;
+    // }
 
     const themesOnly = themesArray.map((theme) => theme.theme);
     return themesOnly;
