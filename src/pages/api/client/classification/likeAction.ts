@@ -1,103 +1,193 @@
 import { fieldValue, firestore } from "@/firebase/adminApp";
 import { PostThemeObject, ThemeObject } from "@/types/Classification";
-import AsyncLock from "async-lock";
 
 import { NextApiRequest, NextApiResponse } from "next";
-
-const lock = new AsyncLock();
 
 export const config = {
   runtime: "nodejs",
   maxDuration: 120,
 };
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  /**
-   * To handle cors policy...
-   */
+/**
+ * Handling cors policy stuff.
+ * @param res
+ */
+function handlePreflightRequest(res: NextApiResponse) {
   res.setHeader(
     "Access-Control-Allow-Origin",
     process.env.NEXT_PUBLIC_ALLOW_CORS_ADDRESS as string
   );
-
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,authorization");
+  res.status(200).end();
+}
 
-  // Handle preflight OPTIONS request
-  if (req.method === "OPTIONS") {
-    // Respond with a 200 OK status code
-    res.status(200).end();
-    return;
+function handleAuthorization(key: string | undefined) {
+  if (key === undefined) {
+    console.error("Unauthorized attemp to likeAction API.");
+    return false;
   }
+
+  const apiKeyBetweenServices = process.env.API_KEY_BETWEEN_SERVICES;
+  if (!apiKeyBetweenServices) {
+    console.error("API_KEY_BETWEEN_SERVICES is undefined from .env file.");
+    return false;
+  }
+
+  return key === apiKeyBetweenServices;
+}
+
+function handleProps(
+  username: string,
+  providerId: string,
+  startTime: number,
+  postDocPath: string
+) {
+  if (!username || !providerId || !startTime || !postDocPath) {
+    console.error("Invalid Props");
+    return false;
+  }
+
+  return true;
+}
+
+async function getPostThemesArrayOfProvider(providerId: string) {
+  try {
+    const postThemesDocSnapshot = await firestore
+      .doc(`/users/${providerId}/postThemes/postThemes`)
+      .get();
+
+    if (!postThemesDocSnapshot.exists) {
+      console.error("Post Themes Doc doesn't exist.");
+      return false;
+    }
+
+    const postThemesDocData = postThemesDocSnapshot.data();
+    if (!postThemesDocData) {
+      console.error("postThemes doc data is undefined.");
+      return false;
+    }
+
+    const postThemesArray =
+      postThemesDocData.postThemesArray as PostThemeObject[];
+
+    return {
+      postThemesArray: postThemesArray,
+    };
+  } catch (error) {
+    console.error("Error on getting postThemes doc", error);
+    return false;
+  }
+}
+
+async function createThemeObjectsOfLikedPost(
+  postDocPath: string,
+  postThemeObjects: PostThemeObject[]
+) {
+  let themeObjects: ThemeObject[] = [];
+
+  for (const postThemeObject of postThemeObjects) {
+    if (
+      !(
+        postThemeObject.postDocPath === postDocPath ||
+        postThemeObject.postDocPath === `/${postDocPath}`
+      )
+    )
+      continue;
+
+    themeObjects = postThemeObject.themes.map((p) => {
+      const themeObject: ThemeObject = {
+        theme: p,
+        ts: Date.now(),
+      };
+      return themeObject;
+    });
+  }
+
+  if (themeObjects.length === 0) {
+    console.error(
+      "Theme objects couldn't find for liked post: ",
+      postDocPath,
+      postThemeObjects
+    );
+    return false;
+  }
+
+  return {
+    themeObjects: themeObjects,
+  };
+}
+
+async function updateClientDoc(
+  username: string,
+  providerId: string,
+  startTime: number,
+  themeObjects: ThemeObject[]
+) {
+  try {
+    const clientDocRef = firestore.doc(
+      `/users/${providerId}/clients/${username}-${startTime}`
+    );
+
+    await clientDocRef.update({
+      themesArray: fieldValue.arrayUnion(...themeObjects),
+    });
+
+    return true;
+  } catch (error) {
+    console.error(
+      "Error while updating themesArray of user on provider database",
+      error
+    );
+    return false;
+  }
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method === "OPTIONS") return handlePreflightRequest(res);
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   const { authorization } = req.headers;
   const { username, providerId, startTime, postDocPath } = req.body;
 
-  if (authorization !== process.env.API_KEY_BETWEEN_SERVICES)
-    return res.status(401).send("Unauthorized");
+  const handleAuthorizationResult = handleAuthorization(authorization);
+  if (!handleAuthorizationResult) return res.status(401).send("Unauthorized");
 
-  if (!username || !providerId || !startTime || !postDocPath) {
-    return res.status(422).send("Invalid Prop or Props");
-  }
+  const handlePropResult = handleProps(
+    username,
+    providerId,
+    startTime,
+    postDocPath
+  );
+  if (!handlePropResult) return res.status(422).send("Invalid Props");
 
-  await lock.acquire(`${username}`, async () => {
-    /**
-     * !!!! We will update /providerId/client doc's themesArray field.
-     *  1-) We need to find out post classification results from provider's postThemes/postThemes doc's postThemesArray.
-     *  2-) Then we need to update providerId/client doc's themesArray field.
-     */
+  const getPostThemesArrayOfProviderResult = await getPostThemesArrayOfProvider(
+    providerId
+  );
 
-    /**
-     * 1-) Getting post's tags (what post about....)
-     */
-    let postThemes;
-    try {
-      const postThemesDoc = await firestore
-        .doc(`users/${providerId}/postThemes/postThemes`)
-        .get();
-      if (!postThemesDoc.exists)
-        throw new Error("Post Themes Doc doesn't exist.");
+  if (!getPostThemesArrayOfProviderResult)
+    return res.status(500).send("Internal Server Error");
 
-      const themesArray = postThemesDoc.data()!
-        .postThemesArray as PostThemeObject[];
-      const postThemeObject: PostThemeObject = themesArray.find(
-        (postThemeObject) => postThemeObject.postDocPath === postDocPath
-      ) as PostThemeObject;
-      if (!postThemeObject)
-        throw new Error("Liked post doesn't exist in provider's database.");
-      postThemes = postThemeObject.themes;
-    } catch (error) {
-      console.error(
-        "Error while getting liked post tags (what it is about)",
-        error
-      );
-      return res.status(500).send("Internal Server Error");
-    }
+  const createThemeObjectsOfLikedPostResult =
+    await createThemeObjectsOfLikedPost(
+      postDocPath,
+      getPostThemesArrayOfProviderResult.postThemesArray
+    );
 
-    /**
-     * 2-) providerId/client doc's themesArray field.
-     */
-    let newThemeObjectArrayToJoin: ThemeObject[] = [];
-    for (const postTheme of postThemes) {
-      const themeObject: ThemeObject = { theme: postTheme, ts: Date.now() };
-      newThemeObjectArrayToJoin.push(themeObject);
-    }
-    try {
-      await firestore
-        .doc(`/users/${providerId}/clients/${username}-${startTime}`)
-        .update({
-          themesArray: fieldValue.arrayUnion(...newThemeObjectArrayToJoin),
-        });
-    } catch (error) {
-      console.error(
-        "Error while updating themesArray of user on provider database",
-        error
-      );
-      return res.status(500).send("Internal Server Error");
-    }
+  if (!createThemeObjectsOfLikedPostResult)
+    return res.status(500).send("Internal Server Error");
 
-    return res.status(200).send("Successfull");
-  });
+  const updateClientDocResult = await updateClientDoc(
+    username,
+    providerId,
+    startTime,
+    createThemeObjectsOfLikedPostResult.themeObjects
+  );
+
+  if (!updateClientDocResult)
+    return res.status(500).send("Internal Server Error");
+
+  return res.status(200).send("Success");
 }

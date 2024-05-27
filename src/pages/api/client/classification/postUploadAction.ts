@@ -262,8 +262,6 @@ export default async function handler(
     if (!result) return res.status(500).send("Internal Server Error");
   }
 
-  console.log("Update postThemes array successfull");
-
   const updateClientDocResult = await updateClientDoc(
     providerId,
     username,
@@ -273,12 +271,8 @@ export default async function handler(
   if (!updateClientDocResult)
     return res.status(500).send("Internal Server Error");
 
-  console.log("Update clientDoc  successfull");
-
   const updatePostsResult = await updatePosts(postDocPath);
   if (!updatePostsResult) return res.status(500).send("Internal Server Error");
-
-  console.log("uplatePostsResult is successfull");
 
   return res.status(200).send("Success");
 }
