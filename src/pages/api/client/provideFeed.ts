@@ -229,9 +229,8 @@ async function createCombinedScoredPostsObjects(
     const timeDifference = currentTime - postCreationTime;
 
     // Normalize time difference
-    const normalizedRecency = Math.round(
-      timeDifference / (1000 * 60 * 60 * 24)
-    );
+
+    const normalizedRecency = 1 / (timeDifference / (1000 * 60 * 60 * 24));
 
     // Normalize relevancy score. (It is already relevanced)
     const normalizedRelevancy = relevanceScoredPostThemeObject.relevanceScore;
@@ -239,12 +238,6 @@ async function createCombinedScoredPostsObjects(
     // Calculate combined score with weights
     const combinedScore =
       recencyWeight * normalizedRecency + relevancyWeight * normalizedRelevancy;
-
-    console.log(
-      `Combined Score: ${combinedScore}: recency:${
-        recencyWeight * normalizedRecency
-      } + relevancy: ${relevancyWeight * normalizedRelevancy}`
-    );
 
     rankedPostThemeObjects.push({
       postDocPath: relevanceScoredPostThemeObject.postDocPath,
