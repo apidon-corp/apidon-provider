@@ -274,11 +274,15 @@ async function preparePostsForClient(
     return false;
   }
 
+  const sorted = combinedScoredPosts.toSorted(
+    (a, b) => b.combinedScore - a.combinedScore
+  );
+
+  console.log(sorted);
+
   const sortedPosts = combinedScoredPosts
     .sort((a, b) => b.combinedScore - a.combinedScore)
     .map((post) => post.postDocPath);
-
-  console.log(sortedPosts);
 
   return sortedPosts;
 }
