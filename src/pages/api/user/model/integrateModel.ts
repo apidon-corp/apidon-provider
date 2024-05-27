@@ -394,7 +394,7 @@ async function createPostThemeObject(
 
     if (!response.ok) {
       console.error(
-        "Response from classify image API of provider is not okay:: \n",
+        `Response from classify image (${preparedPost.postDocData.image}) API of provider is not okay:: \n`,
         await response.text()
       );
       return placeHolderPostServerData;
