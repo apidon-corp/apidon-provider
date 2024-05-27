@@ -13,7 +13,8 @@ export default function AlgorithmArea() {
     inputImageSizes: "120x120",
     modelEnvironment: "keras",
     modelExtension: "h5",
-    modelPath: "https://google.com",
+    modelPath: "NOT-FOUND",
+    labelPath: "NOT-FOUND",
   });
 
   const [billingModelState, setBillingModalState] = useRecoilState(
@@ -46,6 +47,7 @@ export default function AlgorithmArea() {
         modelEnvironment: "keras",
         modelExtension: "h5",
         modelPath: "NOT FOUND",
+        labelPath: "NOT FOUND",
       });
     }
 

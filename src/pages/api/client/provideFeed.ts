@@ -229,7 +229,8 @@ async function createCombinedScoredPostsObjects(
     const timeDifference = currentTime - postCreationTime;
 
     // Normalize time difference
-    const normalizedRecency = 1 / timeDifference / (1000 * 60 * 60 * 24);
+
+    const normalizedRecency = 1 / (timeDifference / (1000 * 60 * 60 * 24));
 
     // Normalize relevancy score. (It is already relevanced)
     const normalizedRelevancy = relevanceScoredPostThemeObject.relevanceScore;
@@ -284,6 +285,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+
   const { authorization } = req.headers;
   const { username, provider, startTime } = req.body;
 
