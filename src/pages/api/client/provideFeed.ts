@@ -247,8 +247,6 @@ async function createCombinedScoredPostsObjects(
     });
   }
 
-  console.log(rankedPostThemeObjects);
-
   return rankedPostThemeObjects;
 }
 
@@ -279,10 +277,6 @@ async function preparePostsForClient(
   const sortedPosts = combinedScoredPosts
     .sort((a, b) => b.combinedScore - a.combinedScore)
     .map((post) => post.postDocPath);
-
-  console.log("-------------------------------------------------------------------")
-
-  console.log(sortedPosts);
 
   return sortedPosts;
 }
