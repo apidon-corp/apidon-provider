@@ -278,6 +278,8 @@ async function preparePostsForClient(
     .sort((a, b) => b.combinedScore - a.combinedScore)
     .map((post) => post.postDocPath);
 
+  console.log(sortedPosts);
+
   return sortedPosts;
 }
 
