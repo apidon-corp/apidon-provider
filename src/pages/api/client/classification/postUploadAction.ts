@@ -250,8 +250,6 @@ export default async function handler(
   if (!username || !postDocPath || !providerId)
     return res.status(422).send("Invalid Props");
 
-  console.log("Post Upload Action initiated.");
-
   const activeProviderIDs = await getActiveProviderIDs();
   if (!activeProviderIDs) return res.status(500).send("Internal Server Error");
 
