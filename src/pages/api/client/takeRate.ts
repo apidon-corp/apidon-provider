@@ -50,8 +50,7 @@ export default async function handler(
   }
 
   const scoreUserGaveBefore = clientDoc.data()?.score;
-
-  const hasUserGivenScoreBefore = scoreUserGaveBefore !== undefined;
+  const hasUserGivenScoreBefore = scoreUserGaveBefore !== 0;
 
   // update client doc
   try {
