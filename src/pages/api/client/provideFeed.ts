@@ -33,8 +33,8 @@ async function handleAuthorization(key: string | undefined) {
   return true;
 }
 
-function validateProps(username: string, provider: string, startTime: number) {
-  if (!username || !provider || !startTime) {
+function validateProps(username: string, provider: string, clientId: string) {
+  if (!username || !provider || !clientId) {
     console.error("Invalid Props");
     return false;
   }
@@ -49,14 +49,10 @@ function validateProps(username: string, provider: string, startTime: number) {
  * @param startTime
  * @returns Array of what user interested like [cat,dog,whale]
  */
-async function getWhatClientIntersted(
-  username: string,
-  provider: string,
-  startTime: number
-) {
+async function getWhatClientIntersted(provider: string, clientId: string) {
   try {
     const clientDocSnapshot = await firestore
-      .doc(`/users/${provider}/clients/${username}-${startTime}`)
+      .doc(`/users/${provider}/clients/${clientId}`)
       .get();
 
     if (!clientDocSnapshot.exists) {
@@ -138,14 +134,12 @@ async function getAllPostsWithTheirThemes(provider: string) {
  * @returns Creates relevence scored posts array.
  */
 async function createRelevanceScoredPostObjects(
-  username: string,
   provider: string,
-  startTime: number
+  clientId: string
 ) {
   const clientInterestedThemes = await getWhatClientIntersted(
-    username,
     provider,
-    startTime
+    clientId
   );
   if (!clientInterestedThemes) return false;
 
@@ -208,14 +202,13 @@ async function getAlgorithmSettings(provider: string) {
 }
 
 async function createCombinedScoredPostsObjects(
-  username: string,
   provider: string,
-  startTime: number,
+  clientId: string,
   relevancyWeight: number,
   recencyWeight: number
 ) {
   const relevanceScoredPostThemeObjects =
-    await createRelevanceScoredPostObjects(username, provider, startTime);
+    await createRelevanceScoredPostObjects(provider, clientId);
   if (!relevanceScoredPostThemeObjects) {
     console.error("Error on creating rankedPostObjects");
     return false;
@@ -251,11 +244,7 @@ async function createCombinedScoredPostsObjects(
   return rankedPostThemeObjects;
 }
 
-async function preparePostsForClient(
-  username: string,
-  provider: string,
-  startTime: number
-) {
+async function preparePostsForClient(provider: string, clientId: string) {
   const algorithmSettings = await getAlgorithmSettings(provider);
   if (!algorithmSettings) return false;
 
@@ -263,9 +252,8 @@ async function preparePostsForClient(
   const recencyWeight = algorithmSettings.recencyWeight;
 
   const combinedScoredPosts = await createCombinedScoredPostsObjects(
-    username,
     provider,
-    startTime,
+    clientId,
     relevancyWeight,
     recencyWeight
   );
@@ -292,19 +280,15 @@ export default async function handler(
   if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   const { authorization } = req.headers;
-  const { username, provider, startTime } = req.body;
+  const { username, provider, clientId } = req.body;
 
   const authResult = await handleAuthorization(authorization);
   if (!authResult) return res.status(401).send("Unauthorized");
 
-  const propResult = validateProps(username, provider, startTime);
+  const propResult = validateProps(username, provider, clientId);
   if (!propResult) return res.status(422).send("Invalid Props");
 
-  const postDocPathArray = await preparePostsForClient(
-    username,
-    provider,
-    startTime
-  );
+  const postDocPathArray = await preparePostsForClient(provider, clientId);
   if (!postDocPathArray) return res.status(500).send("Internal Server Error");
 
   return res.status(200).json({

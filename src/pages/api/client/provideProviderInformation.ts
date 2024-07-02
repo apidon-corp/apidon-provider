@@ -29,12 +29,12 @@ export default async function handler(
   }
 
   const { authorization } = req.headers;
-  const { providerName, startTime, client } = req.body;
+  const { providerName, clientId } = req.body;
 
   if (authorization !== process.env.API_KEY_BETWEEN_SERVICES)
     return res.status(401).send("unauthorized");
 
-  if (!providerName || !startTime || !client) {
+  if (!providerName || !clientId) {
     return res.status(422).send("Invalid prop or props");
   }
 
@@ -42,7 +42,7 @@ export default async function handler(
 
   try {
     const clientDoc = await firestore
-      .doc(`/users/${providerName}/clients/${client}-${startTime}`)
+      .doc(`/users/${providerName}/clients/${clientId}`)
       .get();
 
     if (!clientDoc.exists) throw new Error("Client doc doesn't exists.");
