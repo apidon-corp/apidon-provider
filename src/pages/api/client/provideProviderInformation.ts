@@ -1,5 +1,6 @@
 import { firestore } from "@/firebase/adminApp";
-import { ActiveProviderInformation } from "@/types/Client";
+import { ActiveProviderInformation, ClientDocData } from "@/types/Client";
+import { IShowcaseItem } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export const config = {
@@ -47,23 +48,18 @@ export default async function handler(
 
     if (!clientDoc.exists) throw new Error("Client doc doesn't exists.");
 
-    const clientDocData = clientDoc.data();
+    const clientDocData = clientDoc.data() as ClientDocData;
     if (clientDocData === undefined)
       throw new Error("clientDocData is undefined.");
 
-    const active = clientDocData.active;
-    const debt = clientDocData.debt;
-    const endTime = clientDocData.endTime;
-    const clientScore = clientDocData.score;
-    const sStartTime = clientDocData.startTime;
-    const withdrawn = clientDocData.withdrawn;
+    const startTime = clientDocData.startTime;
 
     const showcaseDoc = await firestore.doc(`showcase/${providerName}`).get();
     if (!showcaseDoc.exists) {
       throw new Error("Showcase doc doesn't exist.");
     }
 
-    const showcaseDocData = showcaseDoc.data();
+    const showcaseDocData = showcaseDoc.data() as IShowcaseItem;
     if (showcaseDocData === undefined)
       throw new Error("showcaseDocData is undefined");
 
@@ -74,28 +70,19 @@ export default async function handler(
     const rateCount = showcaseDocData.rateCount;
     const sumScore = showcaseDocData.sumScore;
 
-    const dueDatePassed = Date.now() >= endTime;
+    const offer = showcaseDocData.offer;
+
     const score = rateCount === 0 ? 0 : sumScore / rateCount;
 
     createdProviderInformation = {
-      isThereActiveProvider: active, // true for this API
-      providerData: {
-        withdrawn: withdrawn,
-        dueDatePassed: dueDatePassed,
-        additionalProviderData: {
-          clientCount: clientCount,
-          description: description,
-          image: image,
-          duration: {
-            endTime: endTime,
-            startTime: sStartTime,
-          },
-          name: name,
-          score: score,
-          userScore: clientScore,
-          yield: debt,
-        },
-      },
+      clientCount: clientCount,
+      description: description,
+      image: image,
+      name: name,
+      score: score,
+      userScore: 5,
+      offer: offer,
+      startTime: startTime,
     };
 
     return res.status(200).json({ ...createdProviderInformation });

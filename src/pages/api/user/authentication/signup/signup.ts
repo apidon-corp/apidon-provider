@@ -252,6 +252,11 @@ export default async function handler(
       ...newShowcaseItemObject,
     });
 
+    // Creating /users/username/clients/ratings doc and empty data in it.
+    batch.set(firestore.doc(`users/${username}/clients/ratings`), {
+      ratings: [],
+    });
+
     await batch.commit();
   } catch (error) {
     console.log("Error on creating user on firestore database: \n", error);
