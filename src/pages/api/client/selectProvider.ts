@@ -4,7 +4,7 @@ import { ClientDocData, InteractedPostObject } from "@/types/Client";
 import { UserInServer } from "@/types/User";
 import { NextApiRequest, NextApiResponse } from "next";
 
-async function handleAuthorization(key: string | undefined) {
+function handleAuthorization(key: string | undefined) {
   if (key === undefined) {
     console.error("Unauthorized attemp to provideFeed API.");
     return false;
@@ -27,7 +27,7 @@ async function handleAuthorization(key: string | undefined) {
 function validateProps(
   username: string,
   providerId: string,
-  interactedPostsObjectsArray: number
+  interactedPostsObjectsArray: []
 ) {
   if (!username || !providerId || !interactedPostsObjectsArray) {
     console.error("Invalid Props");
@@ -70,6 +70,23 @@ async function updateProviderDoc(providerId: string) {
   } catch (error) {
     console.error(
       `Error while updating provider doc. (We were updating provider doc for: ${providerId})`
+    );
+    return false;
+  }
+}
+
+async function updateProviderShowcase(providerId: string) {
+  try {
+    const showcaseDocRef = firestore.doc(`/showcase/${providerId}`);
+
+    await showcaseDocRef.update({
+      clientCount: fieldValue.increment(1),
+    });
+
+    return true;
+  } catch (error) {
+    console.error(
+      `Error while updating provider showcase. (We were updating provider showcase for: ${providerId})`
     );
     return false;
   }
@@ -197,6 +214,10 @@ async function updateExistingProvider(
         finalProfit: finalProfit,
       });
 
+    await firestore.doc(`/showcase/${oldProviderId}`).update({
+      clientCount: fieldValue.increment(-1),
+    });
+
     return true;
   } catch (error) {
     console.error(
@@ -241,6 +262,10 @@ export default async function handler(
   const updateProviderDocResult = await updateProviderDoc(providerId);
   if (!updateProviderDocResult)
     return res.status(500).send("Internal Server Error");
+
+  const updateShowcaseResult = await updateProviderShowcase(providerId);
+  if (!updateShowcaseResult)
+    return res.status(503).send("Internal Server Error");
 
   const postThemesArray = await getPostThemesArray(username, providerId);
   if (!postThemesArray) return res.status(503).send("Internal Server Error");
