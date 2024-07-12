@@ -111,13 +111,14 @@ async function checkAllPostsValidity(postDocPaths: string[]) {
     return false;
   }
 
-  const userPanelBaseURL = process.env.USER_PANEL_BASE_URL;
-  if (!userPanelBaseURL) {
-    console.error("User panel base url couldn't be fetched from .env file.");
+  const providePostInformationEndpoint =
+    process.env.USER_PANEL_PROVIDE_POST_INFORMATION_API_ROUTE;
+  if (!providePostInformationEndpoint) {
+    console.error(
+      "Provide post information endpoint couldn't be fetched from .env file."
+    );
     return false;
   }
-
-  const providePostInformationEndpoint = `${userPanelBaseURL}/api/provider/providePostInformation`;
 
   const results = await Promise.all(
     postDocPaths.map((p) =>
