@@ -252,6 +252,14 @@ export default async function handler(
       ...newShowcaseItemObject,
     });
 
+    batch.set(firestore
+      .doc(`users/${username}/modelSettings/algorithmSettings`),{
+        recencyWeight:1,
+        relevanceWeight:1
+      }
+
+    )
+
     await batch.commit();
   } catch (error) {
     console.log("Error on creating user on firestore database: \n", error);
