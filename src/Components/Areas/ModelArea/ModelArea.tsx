@@ -52,36 +52,6 @@ export default function AlgorithmArea() {
     }
   };
 
-  const handleUpdateAlgorithmSettings = async () => {
-    try {
-      const idToken = await auth.currentUser?.getIdToken();
-
-      if (!idToken) {
-        return console.error("idToken is undefined");
-      }
-
-      const response = await fetch("/api/user/algorithm/updateAlgorithmSettings", {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          recencyWeight,
-          relevanceWeight,
-        }),
-      });
-
-      if (!response.ok) {
-        return console.error("Response is not okay", await response.text());
-      }
-
-      console.log("API response success: ", await response.text());
-    } catch (error) {
-      console.error("Request failed: ", error);
-    }
-  };
-
   const handleUpdateAlgorithmButton = () => {
     setBillingModalState({ isOpen: true });
   };
