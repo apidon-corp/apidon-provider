@@ -37,12 +37,11 @@ function handleAuthorization(key: string | undefined) {
 }
 
 function handleProps(
-  username: string,
+  clientId: string,
   providerId: string,
-  startTime: number,
   postDocPath: string
 ) {
-  if (!username || !providerId || !startTime || !postDocPath) {
+  if (!clientId || !providerId || !postDocPath) {
     console.error("Invalid Props");
     return false;
   }
@@ -105,9 +104,8 @@ async function createThemeObjectsOfCommentedPost(
 
   if (themeObjects.length === 0) {
     console.error(
-      "Theme objects couldn't find for liked post: ",
-      postDocPath,
-      postThemeObjects
+      "Theme objects couldn't find for commented post: ",
+      postDocPath
     );
     return false;
   }
@@ -118,14 +116,13 @@ async function createThemeObjectsOfCommentedPost(
 }
 
 async function updateClientDoc(
-  username: string,
+  clientId: string,
   providerId: string,
-  startTime: number,
   themeObjects: ThemeObject[]
 ) {
   try {
     const clientDocRef = firestore.doc(
-      `/users/${providerId}/clients/${username}-${startTime}`
+      `/users/${providerId}/clients/${clientId}`
     );
 
     await clientDocRef.update({
@@ -150,17 +147,12 @@ export default async function handler(
   if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   const { authorization } = req.headers;
-  const { username, providerId, startTime, postDocPath } = req.body;
+  const { providerId, clientId, postDocPath } = req.body;
 
   const handleAuthorizationResult = handleAuthorization(authorization);
   if (!handleAuthorizationResult) return res.status(401).send("Unauthorized");
 
-  const handlePropResult = handleProps(
-    username,
-    providerId,
-    startTime,
-    postDocPath
-  );
+  const handlePropResult = handleProps(clientId, providerId, postDocPath);
   if (!handlePropResult) return res.status(422).send("Invalid Props");
 
   const getPostThemesArrayOfProviderResult = await getPostThemesArrayOfProvider(
@@ -180,9 +172,8 @@ export default async function handler(
     return res.status(500).send("Internal Server Error");
 
   const updateClientDocResult = await updateClientDoc(
-    username,
+    clientId,
     providerId,
-    startTime,
     createThemeObjectsOfCommentedPostResult.themeObjects
   );
 

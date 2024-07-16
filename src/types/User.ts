@@ -15,6 +15,9 @@ export interface UserInServer {
   uid: string;
 }
 
+/**
+ * To use at UI side
+ */
 export interface CurrentUser {
   name: string;
   email: string;

@@ -165,7 +165,6 @@ async function updatePostThemesArray(
 async function updateClientDoc(
   providerId: string,
   clientId: string,
-  clientStartTime: string,
   imageURL: string | null
 ) {
   const predictions = await getClassifyResult(providerId, imageURL);
@@ -176,11 +175,9 @@ async function updateClientDoc(
   );
 
   try {
-    await firestore
-      .doc(`/users/${providerId}/clients/${clientId}-${clientStartTime}`)
-      .update({
-        themesArray: fieldValue.arrayUnion(...themeArrayObjectArray),
-      });
+    await firestore.doc(`/users/${providerId}/clients/${clientId}`).update({
+      themesArray: fieldValue.arrayUnion(...themeArrayObjectArray),
+    });
     return true;
   } catch (error) {
     console.error(
@@ -242,12 +239,12 @@ export default async function handler(
   if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   const { authorization } = req.headers;
-  const { username, postDocPath, imageURL, providerId, startTime } = req.body;
+  const { username, postDocPath, imageURL, providerId, clientId } = req.body;
 
   if (authorization !== process.env.API_KEY_BETWEEN_SERVICES)
     return res.status(401).send("Unauthorized");
 
-  if (!username || !postDocPath || !providerId)
+  if (!username || !postDocPath || !providerId || !clientId)
     return res.status(422).send("Invalid Props");
 
   const activeProviderIDs = await getActiveProviderIDs();
@@ -264,8 +261,7 @@ export default async function handler(
 
   const updateClientDocResult = await updateClientDoc(
     providerId,
-    username,
-    startTime,
+    clientId,
     imageURL
   );
   if (!updateClientDocResult)
