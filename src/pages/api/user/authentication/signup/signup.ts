@@ -251,7 +251,15 @@ export default async function handler(
     batch.set(firestore.doc(`showcase/${username}`), {
       ...newShowcaseItemObject,
     });
+    
+     batch.set(firestore
+      .doc(`users/${username}/modelSettings/algorithmSettings`),{
+        recencyWeight:1,
+        relevanceWeight:1
+      }
 
+    )
+    
     // Creating /users/username/clients/ratings doc and empty data in it.
     batch.set(firestore.doc(`users/${username}/clients/ratings`), {
       ratings: [],

@@ -1,12 +1,13 @@
 import { billingModalStatusAtom } from "@/atoms/billingModalStatusAtom";
 import { auth, firestore } from "@/firebase/clientApp";
-
 import { ModelSettings } from "@/types/Model";
-import { Button, Flex, Spinner, Text } from "@chakra-ui/react";
+import { Button, Flex, Input, Spinner, Text } from "@chakra-ui/react";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 import BillingModal from "./BillingModal";
+import AlgorithmSettings from "./AlgorithmSettings";
+
 
 export default function AlgorithmArea() {
   const [modelSettingsState, setModelSettingsState] = useState<ModelSettings>({
@@ -22,41 +23,33 @@ export default function AlgorithmArea() {
   );
 
   const [loading, setLoading] = useState(true);
+  
 
-  // Initially fetch data...
+  // Fetch initial data including algorithm settings
   useEffect(() => {
     if (!billingModelState.isOpen) handleGetInitialDataFromServer();
   }, [billingModelState.isOpen]);
 
   const handleGetInitialDataFromServer = async () => {
     setLoading(true);
-    const modelSettingsDocFromServer = await getDoc(
-      doc(
-        firestore,
-        `users/${auth.currentUser?.displayName}/modelSettings/modelSettings`
-      )
-    );
+    try {
+      const modelSettingsDoc = await getDoc(
+        doc(
+          firestore,
+          `users/${auth.currentUser?.displayName}/modelSettings/modelSettings`
+        )
+      );
 
-    if (
-      !modelSettingsDocFromServer.exists() ||
-      !modelSettingsDocFromServer.data()
-    ) {
+      if (modelSettingsDoc.exists()) {
+        const modelSettingsData = modelSettingsDoc.data() as ModelSettings;
+        setModelSettingsState(modelSettingsData);
+      }
+
+    } catch (error) {
+      console.error("Error fetching initial data:", error);
+    } finally {
       setLoading(false);
-      return setModelSettingsState({
-        inputImageSizes: "120x120",
-        modelEnvironment: "keras",
-        modelExtension: "h5",
-        modelPath: "NOT FOUND",
-        labelPath: "NOT FOUND",
-      });
     }
-
-    const modelSettingsDataInServer: ModelSettings =
-      modelSettingsDocFromServer.data() as ModelSettings;
-
-    setModelSettingsState(modelSettingsDataInServer);
-
-    setLoading(false);
   };
 
   const handleUpdateAlgorithmButton = () => {
@@ -94,7 +87,7 @@ export default function AlgorithmArea() {
               gap="5px"
             >
               <Flex
-                id="model-environemt"
+                id="model-environment"
                 direction="column"
                 bg="black"
                 borderRadius="10px"
@@ -170,6 +163,8 @@ export default function AlgorithmArea() {
                 Update Algorithm
               </Button>
             </Flex>
+            <AlgorithmSettings />
+            
           </>
         )}
       </Flex>

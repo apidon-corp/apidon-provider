@@ -26,6 +26,7 @@ export default function Home() {
           <StatsArea />
           <OfferArea />
           <AlgorithmArea />
+          <></>
         </Flex>
       )}
       {!currentUserState.isThereCurrentUser && (
