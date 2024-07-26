@@ -230,7 +230,7 @@ async function getAllPostsFromServer() {
 
 async function getPostInformationFromUserSide(postDocPath: string) {
   const providePostInformationEndpoint =
-    process.env.PROVIDE_POST_INFORMATION_ENDPOINT;
+    process.env.USER_PANEL_PROVIDE_POST_INFORMATION_API_ROUTE;
 
   if (
     !providePostInformationEndpoint ||

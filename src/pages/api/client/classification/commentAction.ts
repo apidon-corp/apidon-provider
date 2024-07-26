@@ -15,7 +15,7 @@ export const config = {
 function handlePreflightRequest(res: NextApiResponse) {
   res.setHeader(
     "Access-Control-Allow-Origin",
-    process.env.NEXT_PUBLIC_ALLOW_CORS_ADDRESS as string
+    process.env.USER_PANEL_BASE_URL as string
   );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,authorization");
   res.status(200).end();
