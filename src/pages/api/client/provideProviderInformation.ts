@@ -9,7 +9,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 export const config = {
   runtime: "nodejs",
-  maxDuration: 120,
+  maxDuration: 60,
 };
 
 function handlePreflightRequest(res: NextApiResponse) {

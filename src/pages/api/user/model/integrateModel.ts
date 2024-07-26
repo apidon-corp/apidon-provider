@@ -11,7 +11,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 export const config = {
   runtime: "nodejs",
-  maxDuration: 300,
+  maxDuration: 60,
 };
 
 async function handleAuthorization(key: string | undefined) {
